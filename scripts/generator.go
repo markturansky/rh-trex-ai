@@ -32,6 +32,7 @@ var (
 	repo                        = "github.com/openshift-online"
 	project                     = "rh-trex"
 	fields                      = ""
+	plural                      = ""
 	openapiEndpointStart        = "# NEW ENDPOINT START"
 	openapiEndpointEnd          = "# NEW ENDPOINT END"
 	openApiSchemaStart          = "# NEW SCHEMA START"
@@ -49,6 +50,49 @@ func init() {
 	flags.StringVar(&repo, "repo", repo, "the name of the repo.  e.g github.com/yourproject")
 	flags.StringVar(&project, "project", project, "the name of the project.  e.g rh-trex")
 	flags.StringVar(&fields, "fields", fields, "comma-separated list of custom fields in format name:type (e.g. 'name:string,age:int,active:bool')")
+	flags.StringVar(&plural, "plural", plural, "the plural form of the kind. If not provided, uses irregular plurals map or adds 's'")
+}
+
+// irregularPlurals maps singular forms to their irregular plural forms
+var irregularPlurals = map[string]string{
+	"registry":   "registries",
+	"category":   "categories", 
+	"company":    "companies",
+	"country":    "countries",
+	"family":     "families",
+	"policy":     "policies",
+	"directory":  "directories",
+	"repository": "repositories",
+	"security":   "securities",
+}
+
+func pluralize(word string) string {
+	if plural != "" {
+		return plural
+	}
+	
+	wordLower := strings.ToLower(word)
+	
+	// Check for irregular plurals by examining word endings  
+	for singular, irregularPlural := range irregularPlurals {
+		if strings.HasSuffix(wordLower, singular) {
+			// Replace the ending with the irregular plural
+			prefix := word[:len(word)-len(singular)]
+			suffix := irregularPlural
+			
+			// Preserve case of the suffix based on the original word's last part
+			originalSuffix := word[len(word)-len(singular):]
+			if originalSuffix == strings.ToUpper(originalSuffix) {
+				suffix = strings.ToUpper(irregularPlural)
+			} else if len(originalSuffix) > 0 && originalSuffix[0] == strings.ToUpper(string(originalSuffix[0]))[0] {
+				suffix = strings.ToUpper(string(irregularPlural[0])) + irregularPlural[1:]
+			}
+			
+			return prefix + suffix
+		}
+	}
+	
+	return word + "s"
 }
 
 func getCmdDir() string {
@@ -85,6 +129,7 @@ func main() {
 		"migration",
 		"test",
 		"test-factories",
+		"testmain",
 		"handlers",
 		"openapi-kind",
 		"plugin",
@@ -103,16 +148,19 @@ func main() {
 		}
 
 		kindLowerCamel := strings.ToLower(string(kind[0])) + kind[1:]
-		kindSnakeCase := toSnakeCase(kind)
+		kindPlural := pluralize(kind)
+		kindPluralLower := pluralize(kindLowerCamel)
+		kindPluralSnake := toSnakeCase(kindPlural)
 		k := myWriter{
 			Project:             project,
+			ProjectPascalCase:   toPascalCase(project),
 			Repo:                repo,
 			Cmd:                 getCmdDir(),
 			Kind:                kind,
-			KindPlural:          fmt.Sprintf("%ss", kind),
-			KindLowerPlural:     kindLowerCamel + "s",
+			KindPlural:          kindPlural,
+			KindLowerPlural:     kindPluralLower,
 			KindLowerSingular:   kindLowerCamel,
-			KindSnakeCasePlural: kindSnakeCase + "s",
+			KindSnakeCasePlural: kindPluralSnake,
 			Fields:              parsedFields,
 		}
 
@@ -120,16 +168,17 @@ func main() {
 		k.ID = fmt.Sprintf("%d%s%s%s%s", now.Year(), datePad(int(now.Month())), datePad(now.Day()), datePad(now.Hour()), datePad(now.Minute()))
 
 		outputPaths := map[string]string{
-			"generate-api":            fmt.Sprintf("pkg/%s/%s.go", nm, k.KindLowerSingular),
-			"generate-presenters":     fmt.Sprintf("pkg/api/presenters/%s.go", k.KindLowerSingular),
-			"generate-dao":            fmt.Sprintf("pkg/%s/%s.go", nm, k.KindLowerSingular),
-			"generate-handlers":       fmt.Sprintf("pkg/%s/%s.go", nm, k.KindLowerSingular),
-			"generate-migration":      fmt.Sprintf("pkg/db/migrations/%s_add_%s.go", k.ID, k.KindLowerPlural),
-			"generate-mock":           fmt.Sprintf("pkg/dao/mocks/%s.go", k.KindLowerSingular),
+			"generate-api":            fmt.Sprintf("plugins/%s/model.go", k.KindLowerPlural),
+			"generate-presenters":     fmt.Sprintf("plugins/%s/presenter.go", k.KindLowerPlural),
+			"generate-dao":            fmt.Sprintf("plugins/%s/dao.go", k.KindLowerPlural),
+			"generate-handlers":       fmt.Sprintf("plugins/%s/handler.go", k.KindLowerPlural),
+			"generate-migration":      fmt.Sprintf("plugins/%s/migration.go", k.KindLowerPlural),
+			"generate-mock":           fmt.Sprintf("plugins/%s/mock_dao.go", k.KindLowerPlural),
 			"generate-openapi-kind":   fmt.Sprintf("openapi/openapi.%s.yaml", k.KindLowerPlural),
-			"generate-test-factories": fmt.Sprintf("test/factories/%s.go", k.KindLowerPlural),
-			"generate-test":           fmt.Sprintf("test/integration/%s_test.go", k.KindLowerPlural),
-			"generate-services":       fmt.Sprintf("pkg/%s/%s.go", nm, k.KindLowerSingular),
+			"generate-test-factories": fmt.Sprintf("plugins/%s/factory_test.go", k.KindLowerPlural),
+			"generate-test":           fmt.Sprintf("plugins/%s/integration_test.go", k.KindLowerPlural),
+			"generate-testmain":       fmt.Sprintf("plugins/%s/testmain_test.go", k.KindLowerPlural),
+			"generate-services":       fmt.Sprintf("plugins/%s/service.go", k.KindLowerPlural),
 			"generate-plugin":         fmt.Sprintf("plugins/%s/plugin.go", k.KindLowerPlural),
 		}
 
@@ -176,10 +225,6 @@ func main() {
 			addPluginImport(k)
 		}
 
-		// Add migration to migration_structs.go after generating the migration
-		if nm == "migration" {
-			addMigrationToList(k)
-		}
 	}
 
 	// Run make generate to regenerate OpenAPI client
@@ -303,6 +348,7 @@ func mapFieldType(name, fieldType string, nullable bool) (Field, error) {
 		field.DBType = "integer"
 		field.OpenAPIType = "integer"
 		field.OpenAPIFormat = "int32"
+		field.NeedsIntConversion = true
 	case "int64":
 		baseType = "int64"
 		pointerType = "*int64"
@@ -342,24 +388,26 @@ func mapFieldType(name, fieldType string, nullable bool) (Field, error) {
 }
 
 type Field struct {
-	Name          string
-	Type          string
-	GoType        string
-	DBType        string
-	OpenAPIType   string
-	OpenAPIFormat string
-	NameSnakeCase string
-	NameCamelCase string
-	JSONTag       string
-	GormTag       string
-	Required      bool
-	Nullable      bool
-	PointerType   string
+	Name               string
+	Type               string
+	GoType             string
+	DBType             string
+	OpenAPIType        string
+	OpenAPIFormat      string
+	NameSnakeCase      string
+	NameCamelCase      string
+	JSONTag            string
+	GormTag            string
+	Required           bool
+	Nullable           bool
+	PointerType        string
+	NeedsIntConversion bool
 }
 
 type myWriter struct {
 	Repo                string
 	Project             string
+	ProjectPascalCase   string
 	Cmd                 string
 	Kind                string
 	KindPlural          string
@@ -478,51 +526,3 @@ func addPluginImport(k myWriter) {
 	panic("Could not find import block in " + mainFile)
 }
 
-func addMigrationToList(k myWriter) {
-	migrationFile := "pkg/db/migrations/migration_structs.go"
-
-	input, err := os.ReadFile(migrationFile)
-	if err != nil {
-		panic(err)
-	}
-
-	migrationFunc := fmt.Sprintf("add%s()", k.KindPlural)
-
-	// Check if the migration already exists in the list
-	if strings.Contains(string(input), migrationFunc) {
-		fmt.Printf("Migration '%s' already exists in MigrationList in %s\n", migrationFunc, migrationFile)
-		return
-	}
-
-	// Find the MigrationList and add the new migration before the closing brace
-	migrationListStart := "var MigrationList = []*gormigrate.Migration{"
-	lines := strings.Split(string(input), "\n")
-	var output []string
-
-	for i, line := range lines {
-		if strings.Contains(line, migrationListStart) {
-			// Found the start, copy everything until closing brace
-			output = append(output, line)
-			for j := i + 1; j < len(lines); j++ {
-				if strings.TrimSpace(lines[j]) == "}" {
-					// Insert new migration before closing brace
-					output = append(output, fmt.Sprintf("\t%s,", migrationFunc))
-					output = append(output, lines[j])
-					// Copy remaining lines
-					output = append(output, lines[j+1:]...)
-
-					err = os.WriteFile(migrationFile, []byte(strings.Join(output, "\n")), 0666)
-					if err != nil {
-						panic(err)
-					}
-					fmt.Printf("Added migration '%s' to MigrationList in %s\n", migrationFunc, migrationFile)
-					return
-				}
-				output = append(output, lines[j])
-			}
-		}
-		output = append(output, line)
-	}
-
-	panic("Could not find MigrationList in " + migrationFile)
-}
