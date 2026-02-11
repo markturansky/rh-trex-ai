@@ -11,7 +11,7 @@ import (
 	"github.com/openshift-online/rh-trex/pkg/controllers"
 	"github.com/openshift-online/rh-trex/pkg/dao"
 	"github.com/openshift-online/rh-trex/pkg/db"
-	"github.com/openshift-online/rh-trex/pkg/environments"
+	"github.com/openshift-online/rh-trex/cmd/trex/environments"
 	pkgserver "github.com/openshift-online/rh-trex/pkg/server"
 	"github.com/openshift-online/rh-trex/plugins/dinosaurs"
 	"github.com/openshift-online/rh-trex/plugins/events"

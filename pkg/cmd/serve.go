@@ -4,7 +4,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 
-	"github.com/openshift-online/rh-trex/pkg/environments"
+	"github.com/openshift-online/rh-trex/cmd/trex/environments"
 	pkgserver "github.com/openshift-online/rh-trex/pkg/server"
 )
 

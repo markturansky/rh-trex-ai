@@ -17,7 +17,7 @@ import (
 	"github.com/openshift-online/rh-trex/pkg/api"
 	"github.com/openshift-online/rh-trex/pkg/api/openapi"
 	"github.com/openshift-online/rh-trex/pkg/config"
-	"github.com/openshift-online/rh-trex/pkg/environments"
+	"github.com/openshift-online/rh-trex/cmd/trex/environments"
 	pkgserver "github.com/openshift-online/rh-trex/pkg/server"
 	"github.com/openshift-online/rh-trex/pkg/testutil"
 )

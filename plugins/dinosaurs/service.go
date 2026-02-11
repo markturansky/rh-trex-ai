@@ -2,7 +2,6 @@ package dinosaurs
 
 import (
 	"context"
-	"time"
 
 	"github.com/openshift-online/rh-trex/pkg/api"
 	"github.com/openshift-online/rh-trex/pkg/db"
@@ -108,7 +107,7 @@ func (s *sqlDinosaurService) Replace(ctx context.Context, dinosaur *Dinosaur) (*
 				return nil, errors.DatabaseAdvisoryLock(err)
 			}
 			if !locked {
-				return nil, services.HandleCreateError("Dinosaur", errors.New(errors.ErrorConflict, "row locked"))
+				return nil, services.HandleUpdateError("Dinosaur", errors.New(errors.ErrorConflict, "row locked"))
 			}
 			defer s.lockFactory.Unlock(ctx, lockOwnerID)
 		}
@@ -119,9 +118,6 @@ func (s *sqlDinosaurService) Replace(ctx context.Context, dinosaur *Dinosaur) (*
 		return nil, services.HandleGetError("Dinosaur", "id", dinosaur.ID, err)
 	}
 
-	if dinosaur.Species == "AdvisoryLockosaurus" {
-		time.Sleep(1 * time.Second)
-	}
 
 	if found.Species == dinosaur.Species {
 		return found, nil
