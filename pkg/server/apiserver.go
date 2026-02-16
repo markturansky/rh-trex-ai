@@ -27,6 +27,12 @@ type defaultAPIServer struct {
 
 var _ Server = &defaultAPIServer{}
 
+var preAuthMiddlewares []func(http.Handler) http.Handler
+
+func RegisterPreAuthMiddleware(mw func(http.Handler) http.Handler) {
+	preAuthMiddlewares = append(preAuthMiddlewares, mw)
+}
+
 func NewDefaultAPIServer(env *environments.Env, specData []byte) Server {
 	s := &defaultAPIServer{env: env}
 
@@ -43,6 +49,10 @@ func NewDefaultAPIServer(env *environments.Env, specData []byte) Server {
 	}
 
 	var mainHandler http.Handler = mainRouter
+
+	for _, mw := range preAuthMiddlewares {
+		mainHandler = mw(mainHandler)
+	}
 
 	if env.Config.Server.EnableJWT {
 		authnLogger, err := sdk.NewGlogLoggerBuilder().
@@ -66,18 +76,29 @@ func NewDefaultAPIServer(env *environments.Env, specData []byte) Server {
 		Check(err, "Unable to create authentication handler", env.Config.Sentry.Timeout)
 	}
 
+	corsOrigins := trex.GetCORSOrigins()
+	if len(env.Config.Server.CORSAllowedOrigins) > 0 {
+		corsOrigins = env.Config.Server.CORSAllowedOrigins
+	}
+
+	corsHeaders := []string{
+		"Authorization",
+		"Content-Type",
+		"X-Forwarded-Access-Token",
+	}
+	if len(env.Config.Server.CORSAllowedHeaders) > 0 {
+		corsHeaders = append(corsHeaders, env.Config.Server.CORSAllowedHeaders...)
+	}
+
 	mainHandler = gorillahandlers.CORS(
-		gorillahandlers.AllowedOrigins(trex.GetCORSOrigins()),
+		gorillahandlers.AllowedOrigins(corsOrigins),
 		gorillahandlers.AllowedMethods([]string{
 			http.MethodDelete,
 			http.MethodGet,
 			http.MethodPatch,
 			http.MethodPost,
 		}),
-		gorillahandlers.AllowedHeaders([]string{
-			"Authorization",
-			"Content-Type",
-		}),
+		gorillahandlers.AllowedHeaders(corsHeaders),
 		gorillahandlers.MaxAge(int((10 * time.Minute).Seconds())),
 	)(mainHandler)
 

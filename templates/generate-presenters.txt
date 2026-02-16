@@ -11,10 +11,10 @@ import (
 	"time"
 
 {{- end}}
-	"{{.Repo}}/{{.Project}}/pkg/api"
+	"{{.Library}}/pkg/api"
 	"{{.Repo}}/{{.Project}}/pkg/api/openapi"
-	"{{.Repo}}/{{.Project}}/pkg/api/presenters"
-	"{{.Repo}}/{{.Project}}/pkg/util"
+	"{{.Library}}/pkg/api/presenters"
+	"{{.Library}}/pkg/util"
 )
 
 func Convert{{.Kind}}({{.KindLowerSingular}} openapi.{{.Kind}}) *{{.Kind}} {

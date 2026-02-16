@@ -3,17 +3,18 @@ package environments
 import (
 	"os"
 
+	pkgenv "github.com/openshift-online/rh-trex-ai/pkg/environments"
 	"github.com/openshift-online/rh-trex-ai/pkg/config"
 	"github.com/openshift-online/rh-trex-ai/pkg/db/db_session"
 )
 
-var _ EnvironmentImpl = &IntegrationTestingEnvImpl{}
+var _ pkgenv.EnvironmentImpl = &IntegrationTestingEnvImpl{}
 
 type IntegrationTestingEnvImpl struct {
-	Env *Env
+	Env *pkgenv.Env
 }
 
-func (e *IntegrationTestingEnvImpl) OverrideDatabase(c *Database) error {
+func (e *IntegrationTestingEnvImpl) OverrideDatabase(c *pkgenv.Database) error {
 	mode := os.Getenv("DB_FACTORY_MODE")
 	if mode == "external" {
 		c.SessionFactory = db_session.NewTestFactory(e.Env.Config.Database)
@@ -30,15 +31,15 @@ func (e *IntegrationTestingEnvImpl) OverrideConfig(c *config.ApplicationConfig) 
 	return nil
 }
 
-func (e *IntegrationTestingEnvImpl) OverrideServices(s *Services) error {
+func (e *IntegrationTestingEnvImpl) OverrideServices(s *pkgenv.Services) error {
 	return nil
 }
 
-func (e *IntegrationTestingEnvImpl) OverrideHandlers(h *Handlers) error {
+func (e *IntegrationTestingEnvImpl) OverrideHandlers(h *pkgenv.Handlers) error {
 	return nil
 }
 
-func (e *IntegrationTestingEnvImpl) OverrideClients(c *Clients) error {
+func (e *IntegrationTestingEnvImpl) OverrideClients(c *pkgenv.Clients) error {
 	return nil
 }
 

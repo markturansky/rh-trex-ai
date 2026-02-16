@@ -3,11 +3,11 @@ package {{.KindLowerPlural}}
 import (
 	"context"
 
-	"{{.Repo}}/{{.Project}}/pkg/api"
-	"{{.Repo}}/{{.Project}}/pkg/db"
-	"{{.Repo}}/{{.Project}}/pkg/errors"
-	"{{.Repo}}/{{.Project}}/pkg/logger"
-	"{{.Repo}}/{{.Project}}/pkg/services"
+	"{{.Library}}/pkg/api"
+	"{{.Library}}/pkg/db"
+	"{{.Library}}/pkg/errors"
+	"{{.Library}}/pkg/logger"
+	"{{.Library}}/pkg/services"
 )
 
 const {{.KindLowerPlural}}LockType db.LockType = "{{.KindSnakeCasePlural}}"

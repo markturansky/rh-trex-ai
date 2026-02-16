@@ -25,7 +25,7 @@ func NewDefaultControllersServer(env *environments.Env) *ControllersServer {
 	// Resolve events service through the generic service registry
 	var eventService services.EventService
 	if locator := env.Services.GetService("Events"); locator != nil {
-		eventService = locator.(func() services.EventService)()
+		eventService = locator.(services.EventServiceLocator)()
 	}
 
 	s := &ControllersServer{

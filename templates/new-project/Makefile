@@ -1,4 +1,5 @@
 BINARY_NAME=my-service
+CONTAINER_ENGINE?=$(shell command -v podman 2>/dev/null || echo docker)
 
 # Version information for ldflags
 git_sha:=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -32,8 +33,7 @@ test: install
 
 .PHONY: test-integration
 test-integration: install
-	@echo "Integration tests not implemented in template"
-	@echo "Add integration tests to test/integration/ after setting up your project"
+	OCM_ENV=integration go test -v ./plugins/... -count=1
 
 .PHONY: clean
 clean:
@@ -41,13 +41,15 @@ clean:
 
 .PHONY: generate
 generate:
-	@echo "OpenAPI client generation not implemented in template"
-	@echo "Run this after setting up your project:"
-	@echo "  go generate ./..."
+	rm -rf pkg/api/openapi
+	$(CONTAINER_ENGINE) build -t $(BINARY_NAME)-openapi -f Dockerfile.openapi .
+	id=$$($(CONTAINER_ENGINE) create $(BINARY_NAME)-openapi) && \
+	$(CONTAINER_ENGINE) cp $$id:/local/pkg/api/openapi ./pkg/api/openapi && \
+	$(CONTAINER_ENGINE) rm $$id
 
 .PHONY: db/setup
 db/setup:
-	docker run -d --name my-service-postgres \
+	$(CONTAINER_ENGINE) run -d --name my-service-postgres \
 		-p 5432:5432 \
 		-e POSTGRES_PASSWORD=postgres \
 		-e POSTGRES_USER=postgres \
@@ -56,9 +58,9 @@ db/setup:
 
 .PHONY: db/teardown
 db/teardown:
-	docker stop my-service-postgres || true
-	docker rm my-service-postgres || true
+	$(CONTAINER_ENGINE) stop my-service-postgres || true
+	$(CONTAINER_ENGINE) rm my-service-postgres || true
 
 .PHONY: db/login
 db/login:
-	docker exec -it my-service-postgres psql -U postgres -d my_service
+	$(CONTAINER_ENGINE) exec -it my-service-postgres psql -U postgres -d my_service

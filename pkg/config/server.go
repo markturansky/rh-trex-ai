@@ -7,18 +7,20 @@ import (
 )
 
 type ServerConfig struct {
-	Hostname      string        `json:"hostname"`
-	BindAddress   string        `json:"bind_address"`
-	ReadTimeout   time.Duration `json:"read_timeout"`
-	WriteTimeout  time.Duration `json:"write_timeout"`
-	HTTPSCertFile string        `json:"https_cert_file"`
-	HTTPSKeyFile  string        `json:"https_key_file"`
-	EnableHTTPS   bool          `json:"enable_https"`
-	EnableJWT     bool          `json:"enable_jwt"`
-	EnableAuthz   bool          `json:"enable_authz"`
-	JwkCertFile   string        `json:"jwk_cert_file"`
-	JwkCertURL    string        `json:"jwk_cert_url"`
-	ACLFile       string        `json:"acl_file"`
+	Hostname           string        `json:"hostname"`
+	BindAddress        string        `json:"bind_address"`
+	ReadTimeout        time.Duration `json:"read_timeout"`
+	WriteTimeout       time.Duration `json:"write_timeout"`
+	HTTPSCertFile      string        `json:"https_cert_file"`
+	HTTPSKeyFile       string        `json:"https_key_file"`
+	EnableHTTPS        bool          `json:"enable_https"`
+	EnableJWT          bool          `json:"enable_jwt"`
+	EnableAuthz        bool          `json:"enable_authz"`
+	JwkCertFile        string        `json:"jwk_cert_file"`
+	JwkCertURL         string        `json:"jwk_cert_url"`
+	ACLFile            string        `json:"acl_file"`
+	CORSAllowedOrigins []string      `json:"cors_allowed_origins"`
+	CORSAllowedHeaders []string      `json:"cors_allowed_headers"`
 }
 
 func NewServerConfig() *ServerConfig {
@@ -51,6 +53,8 @@ func (s *ServerConfig) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.JwkCertFile, "jwk-cert-file", s.JwkCertFile, "JWK Certificate file")
 	fs.StringVar(&s.JwkCertURL, "jwk-cert-url", s.JwkCertURL, "JWK Certificate URL")
 	fs.StringVar(&s.ACLFile, "acl-file", s.ACLFile, "Access control list file")
+	fs.StringSliceVar(&s.CORSAllowedOrigins, "cors-allowed-origins", s.CORSAllowedOrigins, "Comma-separated list of CORS allowed origins")
+	fs.StringSliceVar(&s.CORSAllowedHeaders, "cors-allowed-headers", s.CORSAllowedHeaders, "Comma-separated list of additional CORS allowed headers")
 }
 
 func (s *ServerConfig) ReadFiles() error {

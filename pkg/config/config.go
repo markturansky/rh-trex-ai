@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -132,6 +131,9 @@ func GetProjectRootDir() string {
 	if projectRootDir != "" {
 		return projectRootDir
 	}
-	_, b, _, _ := runtime.Caller(0)
-	return filepath.Dir(filepath.Join(b, "..", ".."))
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "."
+	}
+	return cwd
 }

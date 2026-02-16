@@ -8,10 +8,7 @@ import (
 	"github.com/openshift-online/rh-trex-ai/pkg/services"
 )
 
-// ServiceLocator Service Locator
-type ServiceLocator func() services.EventService
-
-func NewServiceLocator(env *environments.Env) ServiceLocator {
+func NewServiceLocator(env *environments.Env) services.EventServiceLocator {
 	return func() services.EventService {
 		return services.NewEventService(dao.NewEventDao(&env.Database.SessionFactory))
 	}
@@ -23,7 +20,7 @@ func Service(s *environments.Services) services.EventService {
 		return nil
 	}
 	if obj := s.GetService("Events"); obj != nil {
-		locator := obj.(ServiceLocator)
+		locator := obj.(services.EventServiceLocator)
 		return locator()
 	}
 	return nil

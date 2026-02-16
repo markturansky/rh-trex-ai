@@ -4,16 +4,16 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"{{.Repo}}/{{.Project}}/cmd/{{.Cmd}}/environments"
-	"{{.Repo}}/{{.Project}}/pkg/registry"
-	pkgserver "{{.Repo}}/{{.Project}}/pkg/server"
-	"{{.Repo}}/{{.Project}}/pkg/api"
-	"{{.Repo}}/{{.Project}}/pkg/api/presenters"
-	"{{.Repo}}/{{.Project}}/pkg/auth"
-	"{{.Repo}}/{{.Project}}/pkg/controllers"
-	"{{.Repo}}/{{.Project}}/pkg/db"
-	"{{.Repo}}/{{.Project}}/plugins/events"
-	"{{.Repo}}/{{.Project}}/plugins/generic"
+	"{{.Library}}/pkg/environments"
+	"{{.Library}}/pkg/registry"
+	pkgserver "{{.Library}}/pkg/server"
+	"{{.Library}}/pkg/api"
+	"{{.Library}}/pkg/api/presenters"
+	"{{.Library}}/pkg/auth"
+	"{{.Library}}/pkg/controllers"
+	"{{.Library}}/pkg/db"
+	"{{.Library}}/plugins/events"
+	"{{.Library}}/plugins/generic"
 )
 
 type ServiceLocator func() {{.Kind}}Service

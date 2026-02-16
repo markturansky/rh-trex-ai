@@ -3,6 +3,8 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
 	"flag"
 	"fmt"
 	"os"
@@ -30,9 +32,10 @@ TODO: all of it can be better
 var (
 	kind                        = "Asteroid"
 	repo                        = "github.com/openshift-online"
-	project                     = "rh-trex"
+	project                     = "rh-trex-ai"
 	fields                      = ""
 	plural                      = ""
+	library                     = "github.com/openshift-online/rh-trex-ai"
 	openapiEndpointStart        = "# NEW ENDPOINT START"
 	openapiEndpointEnd          = "# NEW ENDPOINT END"
 	openApiSchemaStart          = "# NEW SCHEMA START"
@@ -51,6 +54,7 @@ func init() {
 	flags.StringVar(&project, "project", project, "the name of the project.  e.g rh-trex")
 	flags.StringVar(&fields, "fields", fields, "comma-separated list of custom fields in format name:type (e.g. 'name:string,age:int,active:bool')")
 	flags.StringVar(&plural, "plural", plural, "the plural form of the kind. If not provided, uses irregular plurals map or adds 's'")
+	flags.StringVar(&library, "library", library, "the module path of the rh-trex-ai library (e.g. github.com/openshift-online/rh-trex-ai)")
 }
 
 // irregularPlurals maps singular forms to their irregular plural forms
@@ -155,6 +159,7 @@ func main() {
 			Project:             project,
 			ProjectPascalCase:   toPascalCase(project),
 			Repo:                repo,
+			Library:             library,
 			Cmd:                 getCmdDir(),
 			Kind:                kind,
 			KindPlural:          kindPlural,
@@ -165,7 +170,8 @@ func main() {
 		}
 
 		now := time.Now()
-		k.ID = fmt.Sprintf("%d%s%s%s%s", now.Year(), datePad(int(now.Month())), datePad(now.Day()), datePad(now.Hour()), datePad(now.Minute()))
+		kindHash := kindNameHash(kind)
+		k.ID = fmt.Sprintf("%d%s%s%s%s%04d", now.Year(), datePad(int(now.Month())), datePad(now.Day()), datePad(now.Hour()), datePad(now.Minute()), kindHash)
 
 		outputPaths := map[string]string{
 			"generate-api":            fmt.Sprintf("plugins/%s/model.go", k.KindLowerPlural),
@@ -235,6 +241,11 @@ func main() {
 	if err := makeCmd.Run(); err != nil {
 		fmt.Printf("Warning: make generate failed: %v\n", err)
 	}
+}
+
+func kindNameHash(kind string) int {
+	h := sha256.Sum256([]byte(kind))
+	return int(binary.BigEndian.Uint16(h[:2])) % 10000
 }
 
 func datePad(d int) string {
@@ -408,6 +419,7 @@ type myWriter struct {
 	Repo                string
 	Project             string
 	ProjectPascalCase   string
+	Library             string
 	Cmd                 string
 	Kind                string
 	KindPlural          string

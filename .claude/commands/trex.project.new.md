@@ -56,6 +56,7 @@ The template includes:
 - `Makefile` with common build and development tasks
 - `secrets/` directory with database and service configuration files
 - `.gitignore` configured for Go projects
+- `.claude/commands/` with Claude Code slash commands for common workflows (kind generation, testing, db setup, etc.)
 
 ## Examples
 
@@ -107,6 +108,7 @@ The `templates/new-project/` template includes:
 - Basic project structure that leverages TRex components
 - `Makefile` configured for TRex-based development
 - `secrets/` directory for configuration files
+- `.claude/commands/` with slash commands for kind generation, removal, field addition, database setup, server start, testing, verification, and OpenAPI generation
 
 ## Framework Architecture
 

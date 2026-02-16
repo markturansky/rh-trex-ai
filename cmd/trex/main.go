@@ -6,6 +6,7 @@ import (
 	"github.com/openshift-online/rh-trex-ai/pkg/api"
 	pkgcmd "github.com/openshift-online/rh-trex-ai/pkg/cmd"
 
+	_ "github.com/openshift-online/rh-trex-ai/cmd/trex/environments"
 	_ "github.com/openshift-online/rh-trex-ai/plugins/dinosaurs"
 	_ "github.com/openshift-online/rh-trex-ai/plugins/events"
 	_ "github.com/openshift-online/rh-trex-ai/plugins/generic"
