@@ -6,7 +6,7 @@ import (
 	localapi "github.com/example/my-service/pkg/api"
 	pkgcmd "github.com/openshift-online/rh-trex-ai/pkg/cmd"
 
-	// Import TRex plugins for basic functionality  
+	_ "github.com/example/my-service/cmd/my-service/environments"
 	_ "github.com/openshift-online/rh-trex-ai/plugins/events"
 	_ "github.com/openshift-online/rh-trex-ai/plugins/generic"
 )

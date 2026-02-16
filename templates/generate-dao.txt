@@ -5,8 +5,8 @@ import (
 
 	"gorm.io/gorm/clause"
 
-	"{{.Repo}}/{{.Project}}/pkg/api"
-	"{{.Repo}}/{{.Project}}/pkg/db"
+	"{{.Library}}/pkg/api"
+	"{{.Library}}/pkg/db"
 )
 
 type {{.Kind}}Dao interface {

@@ -3,17 +3,18 @@ package environments
 import (
 	"os"
 
+	pkgenv "github.com/openshift-online/rh-trex-ai/pkg/environments"
 	"github.com/openshift-online/rh-trex-ai/pkg/config"
 	dbmocks "github.com/openshift-online/rh-trex-ai/pkg/db/mocks"
 )
 
-var _ EnvironmentImpl = &UnitTestingEnvImpl{}
+var _ pkgenv.EnvironmentImpl = &UnitTestingEnvImpl{}
 
 type UnitTestingEnvImpl struct {
-	Env *Env
+	Env *pkgenv.Env
 }
 
-func (e *UnitTestingEnvImpl) OverrideDatabase(c *Database) error {
+func (e *UnitTestingEnvImpl) OverrideDatabase(c *pkgenv.Database) error {
 	c.SessionFactory = dbmocks.NewMockSessionFactory()
 	return nil
 }
@@ -25,15 +26,15 @@ func (e *UnitTestingEnvImpl) OverrideConfig(c *config.ApplicationConfig) error {
 	return nil
 }
 
-func (e *UnitTestingEnvImpl) OverrideServices(s *Services) error {
+func (e *UnitTestingEnvImpl) OverrideServices(s *pkgenv.Services) error {
 	return nil
 }
 
-func (e *UnitTestingEnvImpl) OverrideHandlers(h *Handlers) error {
+func (e *UnitTestingEnvImpl) OverrideHandlers(h *pkgenv.Handlers) error {
 	return nil
 }
 
-func (e *UnitTestingEnvImpl) OverrideClients(c *Clients) error {
+func (e *UnitTestingEnvImpl) OverrideClients(c *pkgenv.Clients) error {
 	return nil
 }
 

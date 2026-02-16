@@ -8,6 +8,8 @@ import (
 	"github.com/openshift-online/rh-trex-ai/pkg/errors"
 )
 
+type EventServiceLocator func() EventService
+
 type EventService interface {
 	Get(ctx context.Context, id string) (*api.Event, *errors.ServiceError)
 	Create(ctx context.Context, event *api.Event) (*api.Event, *errors.ServiceError)

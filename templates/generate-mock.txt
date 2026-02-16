@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"{{.Repo}}/{{.Project}}/pkg/errors"
+	"{{.Library}}/pkg/errors"
 )
 
 var _ {{.Kind}}Dao = &{{.KindLowerSingular}}DaoMock{}

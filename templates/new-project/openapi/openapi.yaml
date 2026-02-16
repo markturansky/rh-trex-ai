@@ -3,16 +3,10 @@ info:
   title: My Service API
   description: My service built with TRex library
   version: "1.0.0"
-  contact:
-    email: openshift-online-team@redhat.com
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 servers:
-  - url: https://api.openshift.com
-    description: Production
-  - url: https://api.stage.openshift.com
-    description: Staging
   - url: http://localhost:8000
     description: localhost
   - url: /

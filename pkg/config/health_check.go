@@ -11,7 +11,7 @@ type HealthCheckConfig struct {
 
 func NewHealthCheckConfig() *HealthCheckConfig {
 	return &HealthCheckConfig{
-		BindAddress: "localhost:8083",
+		BindAddress: "localhost:4434",
 		EnableHTTPS: false,
 	}
 }

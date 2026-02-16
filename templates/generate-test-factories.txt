@@ -13,7 +13,7 @@ import (
 	"time"
 {{- end}}
 
-	"{{.Repo}}/{{.Project}}/cmd/{{.Cmd}}/environments"
+	"{{.Library}}/pkg/environments"
 	"{{.Repo}}/{{.Project}}/plugins/{{.KindLowerPlural}}"
 )
 

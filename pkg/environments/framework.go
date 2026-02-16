@@ -32,26 +32,14 @@ func NewEnvironment(impls map[string]EnvironmentImpl) *Env {
 	return globalEnv
 }
 
-func DefaultEnvironmentImpls(env *Env) map[string]EnvironmentImpl {
-	return map[string]EnvironmentImpl{
-		DevelopmentEnv:        &DevEnvImpl{Env: env},
-		UnitTestingEnv:        &UnitTestingEnvImpl{Env: env},
-		IntegrationTestingEnv: &IntegrationTestingEnvImpl{Env: env},
-		ProductionEnv:         &ProductionEnvImpl{Env: env},
-	}
-}
-
-func NewDefaultEnvironment() *Env {
-	globalOnce.Do(func() {
-		globalEnv = &Env{}
-		globalEnv.Config = config.NewApplicationConfig()
-		globalEnv.Name = GetEnvironmentStrFromEnv()
-		envImpls = DefaultEnvironmentImpls(globalEnv)
-	})
-	return globalEnv
+func (e *Env) SetEnvironmentImpls(impls map[string]EnvironmentImpl) {
+	envImpls = impls
 }
 
 func Environment() *Env {
+	if globalEnv == nil {
+		panic("environments.Environment() called before NewEnvironment() — ensure your cmd/<service>/environments package is imported in main.go for its init() side-effect")
+	}
 	return globalEnv
 }
 

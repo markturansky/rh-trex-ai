@@ -6,10 +6,10 @@ import (
 	"github.com/gorilla/mux"
 
 	"{{.Repo}}/{{.Project}}/pkg/api/openapi"
-	"{{.Repo}}/{{.Project}}/pkg/api/presenters"
-	"{{.Repo}}/{{.Project}}/pkg/errors"
-	"{{.Repo}}/{{.Project}}/pkg/handlers"
-	"{{.Repo}}/{{.Project}}/pkg/services"
+	"{{.Library}}/pkg/api/presenters"
+	"{{.Library}}/pkg/errors"
+	"{{.Library}}/pkg/handlers"
+	"{{.Library}}/pkg/services"
 )
 
 var _ handlers.RestHandler = {{.KindLowerSingular}}Handler{}
