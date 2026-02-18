@@ -30,7 +30,7 @@ type ErrorHandlerFunc func(ctx context.Context, w http.ResponseWriter, err *erro
 type HTTPAction func() (interface{}, *errors.ServiceError)
 
 func HandleError(ctx context.Context, w http.ResponseWriter, err *errors.ServiceError) {
-	log := logger.NewOCMLogger(ctx)
+	log := logger.NewLogger(ctx)
 	operationID := logger.GetOperationID(ctx)
 	// If this is a 400 error, its the user's issue, log as info rather than error
 	if err.HttpCode >= 400 && err.HttpCode <= 499 {

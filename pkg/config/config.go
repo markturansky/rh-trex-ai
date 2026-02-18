@@ -21,7 +21,7 @@ type ApplicationConfig struct {
 	Metrics     *MetricsConfig     `json:"metrics"`
 	HealthCheck *HealthCheckConfig `json:"health_check"`
 	Database    *DatabaseConfig    `json:"database"`
-	OCM         *OCMConfig         `json:"ocm"`
+	APIClient   *APIClientConfig   `json:"api_client"`
 	Sentry      *SentryConfig      `json:"sentry"`
 }
 
@@ -32,7 +32,7 @@ func NewApplicationConfig() *ApplicationConfig {
 		Metrics:     NewMetricsConfig(),
 		HealthCheck: NewHealthCheckConfig(),
 		Database:    NewDatabaseConfig(),
-		OCM:         NewOCMConfig(),
+		APIClient:   NewAPIClientConfig(),
 		Sentry:      NewSentryConfig(),
 	}
 }
@@ -44,7 +44,7 @@ func (c *ApplicationConfig) AddFlags(flagset *pflag.FlagSet) {
 	c.Metrics.AddFlags(flagset)
 	c.HealthCheck.AddFlags(flagset)
 	c.Database.AddFlags(flagset)
-	c.OCM.AddFlags(flagset)
+	c.APIClient.AddFlags(flagset)
 	c.Sentry.AddFlags(flagset)
 }
 
@@ -56,7 +56,7 @@ func (c *ApplicationConfig) ReadFiles() []string {
 		{c.Server.ReadFiles, "Server"},
 		{c.GRPC.ReadFiles, "GRPC"},
 		{c.Database.ReadFiles, "Database"},
-		{c.OCM.ReadFiles, "OCM"},
+		{c.APIClient.ReadFiles, "APIClient"},
 		{c.Metrics.ReadFiles, "Metrics"},
 		{c.HealthCheck.ReadFiles, "HealthCheck"},
 		{c.Sentry.ReadFiles, "Sentry"},

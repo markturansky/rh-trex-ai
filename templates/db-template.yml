@@ -20,7 +20,7 @@ parameters:
     description: Username for PostgreSQL user that will be used for accessing the database.
     displayName: PostgreSQLUsername
     required: true
-    value: ocm
+    value: trex
 
   - name: DATABASE_PASSWORD
     description: Password for the PostgreSQL connection user.
@@ -32,7 +32,7 @@ parameters:
     description: Name of the PostgreSQL database accessed.
     displayName: PostgreSQL Database Name
     required: true
-    value: ocmexservice
+    value: trexservice
 
   - name: DATABASE_VOLUME_CAPACITY
     description: Volume space available for data, e.g. 512Mi, 2Gi.

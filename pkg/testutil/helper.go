@@ -185,7 +185,7 @@ func (h *BaseHelper) ResetDB() error {
 
 func (h *BaseHelper) CreateJWTString(account *amv1.Account) string {
 	claims := jwt.MapClaims{
-		"iss":        h.AppConfig.OCM.TokenURL,
+		"iss":        h.AppConfig.APIClient.TokenURL,
 		"username":   strings.ToLower(account.Username()),
 		"first_name": account.FirstName(),
 		"last_name":  account.LastName(),

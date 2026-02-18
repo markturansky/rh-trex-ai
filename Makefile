@@ -19,7 +19,7 @@ image_tag:=$(version)
 # The namespace and the environment are calculated from the name of the user to
 # avoid clashes in shared infrastructure:
 environment:=${USER}
-namespace:=ocm-${USER}
+namespace:=trex-${USER}
 
 # a tool for managing containers and images, etc. You can set it as docker
 container_tool ?= podman
@@ -64,7 +64,7 @@ integration_test_json_output ?= ${PWD}/integration-test-results.json
 # Prints a list of useful targets.
 help:
 	@echo ""
-	@echo "OpenShift CLuster Manager Example Service"
+	@echo "TRex API Service"
 	@echo ""
 	@echo "make verify               verify source code"
 	@echo "make lint                 run golangci-lint"
@@ -102,19 +102,19 @@ ldflags=-X github.com/openshift-online/rh-trex-ai/pkg/api.Version=$(build_versio
 ### Envrionment-sourced variables with defaults
 # Can be overriden by setting environment var before running
 # Example:
-#   OCM_ENV=unit_testing make run
-#   export OCM_ENV=testing; make run
+#   API_ENV=unit_testing make run
+#   export API_ENV=testing; make run
 # Set the environment to development by default
-ifndef OCM_ENV
-	OCM_ENV:=development
+ifndef API_ENV
+	API_ENV:=development
 endif
 
 ifndef TEST_SUMMARY_FORMAT
 	TEST_SUMMARY_FORMAT=short-verbose
 endif
 
-ifndef OCM_BASE_URL
-	OCM_BASE_URL:="https://api.integration.openshift.com"
+ifndef API_BASE_URL
+	API_BASE_URL:="https://api.integration.openshift.com"
 endif
 
 # Checks if a GOPATH is set, or emits an error message
@@ -179,7 +179,7 @@ install: check-gopath
 # Examples:
 #   make test TESTFLAGS="-run TestSomething"
 test: install
-	OCM_ENV=unit_testing gotestsum --format short-verbose -- -p 1 -v $(TESTFLAGS) \
+	API_ENV=unit_testing gotestsum --format short-verbose -- -p 1 -v $(TESTFLAGS) \
 		./pkg/... \
 		./cmd/...
 .PHONY: test
@@ -193,7 +193,7 @@ test: install
 #   make test-unit-json TESTFLAGS="-run TestSomething"
 ci-test-unit: install
 	@echo $(db_password) > ${PWD}/secrets/db.password
-	OCM_ENV=unit_testing gotestsum --jsonfile-timing-events=$(unit_test_json_output) --format short-verbose -- -p 1 -v $(TESTFLAGS) \
+	API_ENV=unit_testing gotestsum --jsonfile-timing-events=$(unit_test_json_output) --format short-verbose -- -p 1 -v $(TESTFLAGS) \
 		./pkg/... \
 		./cmd/...
 .PHONY: ci-test-unit
@@ -210,7 +210,7 @@ ci-test-unit: install
 #   make test-integration TESTFLAGS="-short"                skips long-run tests
 ci-test-integration: install
 	@echo $(db_password) > ${PWD}/secrets/db.password
-	OCM_ENV=integration_testing gotestsum --jsonfile-timing-events=$(integration_test_json_output) --format $(TEST_SUMMARY_FORMAT) -- -p 1 -ldflags -s -v -timeout 1h $(TESTFLAGS) \
+	API_ENV=integration_testing gotestsum --jsonfile-timing-events=$(integration_test_json_output) --format $(TEST_SUMMARY_FORMAT) -- -p 1 -ldflags -s -v -timeout 1h $(TESTFLAGS) \
 			./test/integration \
 			./plugins/...
 .PHONY: ci-test-integration
@@ -227,7 +227,7 @@ ci-test-integration: install
 #   make test-integration TESTFLAGS="-short"                skips long-run tests
 test-integration: install
 	@echo $(db_password) > ${PWD}/secrets/db.password
-	OCM_ENV=integration_testing gotestsum --format $(TEST_SUMMARY_FORMAT) -- -p 1 -ldflags -s -v -timeout 1h $(TESTFLAGS) \
+	API_ENV=integration_testing gotestsum --format $(TEST_SUMMARY_FORMAT) -- -p 1 -ldflags -s -v -timeout 1h $(TESTFLAGS) \
 			./test/integration \
 			./plugins/...
 .PHONY: test-integration
@@ -299,7 +299,7 @@ cmds:
 		--filename="templates/$*-template.yml" \
 		--local="true" \
 		--ignore-unknown-parameters="true" \
-		--param="ENVIRONMENT=$(OCM_ENV)" \
+		--param="ENVIRONMENT=$(API_ENV)" \
 		--param="GLOG_V=$(glog_v)" \
 		--param="DATABASE_HOST=$(db_host)" \
 		--param="DATABASE_NAME=$(db_name)" \
@@ -315,10 +315,10 @@ cmds:
 		--param="ENABLE_SENTRY"=false \
 		--param="SENTRY_KEY"=TODO \
 		--param="JWKS_URL=$(jwks_url)" \
-		--param="OCM_SERVICE_CLIENT_ID=$(CLIENT_ID)" \
-		--param="OCM_SERVICE_CLIENT_SECRET=$(CLIENT_SECRET)" \
+		--param="API_SERVICE_CLIENT_ID=$(CLIENT_ID)" \
+		--param="API_SERVICE_CLIENT_SECRET=$(CLIENT_SECRET)" \
 		--param="TOKEN=$(token)" \
-		--param="OCM_BASE_URL=$(OCM_BASE_URL)" \
+		--param="API_BASE_URL=$(API_BASE_URL)" \
 		--param="ENVOY_IMAGE=$(envoy_image)" \
 		--param="ENABLE_JQS="false \
 	> "templates/$*-template.json"

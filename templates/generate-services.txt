@@ -47,7 +47,7 @@ type sql{{.Kind}}Service struct {
 }
 
 func (s *sql{{.Kind}}Service) OnUpsert(ctx context.Context, id string) error {
-	logger := logger.NewOCMLogger(ctx)
+	logger := logger.NewLogger(ctx)
 
 	{{.KindLowerSingular}}, err := s.{{.KindLowerSingular}}Dao.Get(ctx, id)
 	if err != nil {
@@ -60,7 +60,7 @@ func (s *sql{{.Kind}}Service) OnUpsert(ctx context.Context, id string) error {
 }
 
 func (s *sql{{.Kind}}Service) OnDelete(ctx context.Context, id string) error {
-	logger := logger.NewOCMLogger(ctx)
+	logger := logger.NewLogger(ctx)
 	logger.Infof("This {{.KindLowerSingular}} has been deleted: %s", id)
 	return nil
 }

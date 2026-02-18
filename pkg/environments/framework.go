@@ -10,7 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
 
-	"github.com/openshift-online/rh-trex-ai/pkg/client/ocm"
+	"github.com/openshift-online/rh-trex-ai/pkg/client/apiclient"
 	"github.com/openshift-online/rh-trex-ai/pkg/config"
 	"github.com/openshift-online/rh-trex-ai/pkg/errors"
 	"github.com/openshift-online/rh-trex-ai/pkg/registry"
@@ -122,23 +122,23 @@ func (e *Env) LoadServices() {
 func (e *Env) LoadClients() error {
 	var err error
 
-	ocmConfig := ocm.Config{
-		BaseURL:      e.Config.OCM.BaseURL,
-		ClientID:     e.Config.OCM.ClientID,
-		ClientSecret: e.Config.OCM.ClientSecret,
-		SelfToken:    e.Config.OCM.SelfToken,
-		TokenURL:     e.Config.OCM.TokenURL,
-		Debug:        e.Config.OCM.Debug,
+	apiClientConfig := apiclient.Config{
+		BaseURL:      e.Config.APIClient.BaseURL,
+		ClientID:     e.Config.APIClient.ClientID,
+		ClientSecret: e.Config.APIClient.ClientSecret,
+		SelfToken:    e.Config.APIClient.SelfToken,
+		TokenURL:     e.Config.APIClient.TokenURL,
+		Debug:        e.Config.APIClient.Debug,
 	}
 
-	if e.Config.OCM.EnableMock {
-		glog.Infof("Using Mock OCM Authz Client")
-		e.Clients.OCM, err = ocm.NewClientMock(ocmConfig)
+	if e.Config.APIClient.EnableMock {
+		glog.Infof("Using Mock Authz Client")
+		e.Clients.APIClient, err = apiclient.NewClientMock(apiClientConfig)
 	} else {
-		e.Clients.OCM, err = ocm.NewClient(ocmConfig)
+		e.Clients.APIClient, err = apiclient.NewClient(apiClientConfig)
 	}
 	if err != nil {
-		glog.Errorf("Unable to create OCM Authz client: %s", err.Error())
+		glog.Errorf("Unable to create API Authz client: %s", err.Error())
 		return err
 	}
 
@@ -186,7 +186,7 @@ func (e *Env) Teardown() {
 			glog.Errorf("Error closing database session factory: %s", err.Error())
 		}
 	}
-	e.Clients.OCM.Close()
+	e.Clients.APIClient.Close()
 }
 
 func SetConfigDefaults(flags *pflag.FlagSet, defaults map[string]string) error {

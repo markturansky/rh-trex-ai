@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/golang/glog"
@@ -11,6 +12,8 @@ import (
 	"github.com/openshift-online/rh-trex-ai/pkg/api"
 	"github.com/openshift-online/rh-trex-ai/pkg/services"
 )
+
+var ErrBrokerClosed = errors.New("event broker is closed")
 
 var (
 	brokerSubscribersActive = prometheus.NewGauge(
@@ -67,9 +70,13 @@ func NewEventBroker(bufferSize int, events services.EventService) *EventBroker {
 	}
 }
 
-func (b *EventBroker) Subscribe(ctx context.Context) *Subscription {
+func (b *EventBroker) Subscribe(ctx context.Context) (*Subscription, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+
+	if b.closed {
+		return nil, ErrBrokerClosed
+	}
 
 	id := ksuid.New().String()
 	ch := make(chan *BrokerEvent, b.bufferSize)
@@ -84,7 +91,7 @@ func (b *EventBroker) Subscribe(ctx context.Context) *Subscription {
 	return &Subscription{
 		ID:     id,
 		Events: ch,
-	}
+	}, nil
 }
 
 func (b *EventBroker) Unsubscribe(id string) {
@@ -99,6 +106,13 @@ func (b *EventBroker) Unsubscribe(id string) {
 }
 
 func (b *EventBroker) Publish(eventID string) {
+	b.mu.RLock()
+	if b.closed {
+		b.mu.RUnlock()
+		return
+	}
+	b.mu.RUnlock()
+
 	ctx := context.Background()
 	event, svcErr := b.events.Get(ctx, eventID)
 	if svcErr != nil {
@@ -115,6 +129,10 @@ func (b *EventBroker) Publish(eventID string) {
 
 	b.mu.RLock()
 	defer b.mu.RUnlock()
+
+	if b.closed {
+		return
+	}
 
 	for subID, ch := range b.subscribers {
 		select {

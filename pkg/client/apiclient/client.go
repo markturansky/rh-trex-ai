@@ -1,4 +1,4 @@
-package ocm
+package apiclient
 
 import (
 	"fmt"
@@ -24,12 +24,11 @@ type Config struct {
 }
 
 func NewClient(config Config) (*Client, error) {
-	// Create a logger that has the debug level enabled:
 	logger, err := sdkClient.NewGoLoggerBuilder().
 		Debug(config.Debug).
 		Build()
 	if err != nil {
-		return nil, fmt.Errorf("unable to build OCM logger: %s", err.Error())
+		return nil, fmt.Errorf("unable to build API client logger: %s", err.Error())
 	}
 
 	client := &Client{
@@ -38,7 +37,7 @@ func NewClient(config Config) (*Client, error) {
 	}
 	err = client.newConnection()
 	if err != nil {
-		return nil, fmt.Errorf("unable to build OCM connection: %s", err.Error())
+		return nil, fmt.Errorf("unable to build API client connection: %s", err.Error())
 	}
 	client.Authorization = &authorization{client: client}
 	return client, nil
@@ -63,13 +62,13 @@ func (c *Client) newConnection() error {
 	} else if c.config.SelfToken != "" {
 		builder = builder.Tokens(c.config.SelfToken)
 	} else {
-		return fmt.Errorf("can't build OCM client connection: no Client/Secret or Token has been provided")
+		return fmt.Errorf("can't build API client connection: no Client/Secret or Token has been provided")
 	}
 
 	connection, err := builder.Build()
 
 	if err != nil {
-		return fmt.Errorf("can't build OCM client connection: %s", err.Error())
+		return fmt.Errorf("can't build API client connection: %s", err.Error())
 	}
 	c.connection = connection
 	return nil
