@@ -1,10 +1,9 @@
-package ocm
+package apiclient
 
 import (
 	"context"
 )
 
-// authorizationMock returns allowed=true for every request
 type authorizationMock service
 
 var _ Authorization = &authorizationMock{}

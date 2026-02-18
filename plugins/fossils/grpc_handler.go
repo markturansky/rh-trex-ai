@@ -12,16 +12,18 @@ import (
 	pb "github.com/openshift-online/rh-trex-ai/pkg/api/grpc/rh_trex/v1"
 	pkgserver "github.com/openshift-online/rh-trex-ai/pkg/server"
 	"github.com/openshift-online/rh-trex-ai/pkg/server/grpcutil"
+	"github.com/openshift-online/rh-trex-ai/pkg/services"
 )
 
 type fossilGRPCHandler struct {
 	pb.UnimplementedFossilServiceServer
 	service    FossilService
+	generic    services.GenericService
 	brokerFunc func() *pkgserver.EventBroker
 }
 
-func NewFossilGRPCHandler(svc FossilService, brokerFunc func() *pkgserver.EventBroker) pb.FossilServiceServer {
-	return &fossilGRPCHandler{service: svc, brokerFunc: brokerFunc}
+func NewFossilGRPCHandler(svc FossilService, generic services.GenericService, brokerFunc func() *pkgserver.EventBroker) pb.FossilServiceServer {
+	return &fossilGRPCHandler{service: svc, generic: generic, brokerFunc: brokerFunc}
 }
 
 func (h *fossilGRPCHandler) GetFossil(ctx context.Context, req *pb.GetFossilRequest) (*pb.Fossil, error) {
@@ -31,7 +33,7 @@ func (h *fossilGRPCHandler) GetFossil(ctx context.Context, req *pb.GetFossilRequ
 
 	fossil, svcErr := h.service.Get(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return fossilToProto(fossil), nil
 }
@@ -55,7 +57,7 @@ func (h *fossilGRPCHandler) CreateFossil(ctx context.Context, req *pb.CreateFoss
 	}
 	result, svcErr := h.service.Create(ctx, fossil)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return fossilToProto(result), nil
 }
@@ -82,7 +84,7 @@ func (h *fossilGRPCHandler) UpdateFossil(ctx context.Context, req *pb.UpdateFoss
 
 	fossil, svcErr := h.service.Get(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	if req.DiscoveryLocation != nil {
 		fossil.DiscoveryLocation = *req.DiscoveryLocation
@@ -98,7 +100,7 @@ func (h *fossilGRPCHandler) UpdateFossil(ctx context.Context, req *pb.UpdateFoss
 	}
 	result, svcErr := h.service.Replace(ctx, fossil)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return fossilToProto(result), nil
 }
@@ -110,7 +112,7 @@ func (h *fossilGRPCHandler) DeleteFossil(ctx context.Context, req *pb.DeleteFoss
 
 	svcErr := h.service.Delete(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return &pb.DeleteFossilResponse{}, nil
 }
@@ -118,33 +120,25 @@ func (h *fossilGRPCHandler) DeleteFossil(ctx context.Context, req *pb.DeleteFoss
 func (h *fossilGRPCHandler) ListFossils(ctx context.Context, req *pb.ListFossilsRequest) (*pb.ListFossilsResponse, error) {
 	page, size := grpcutil.NormalizePagination(req.Page, req.Size)
 
-	allFossils, svcErr := h.service.All(ctx)
+	listArgs := &services.ListArguments{
+		Page: int(page),
+		Size: int64(size),
+	}
+
+	var fossils []Fossil
+	paging, svcErr := h.generic.List(ctx, "id", listArgs, &fossils)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 
-	total := int32(len(allFossils))
-	start := (page - 1) * size
-	if start >= total {
-		return &pb.ListFossilsResponse{
-			Items:    []*pb.Fossil{},
-			Metadata: &pb.ListMeta{Page: page, Size: size, Total: total},
-		}, nil
-	}
-	end := start + size
-	if end > total {
-		end = total
-	}
-	pageItems := allFossils[start:end]
-
-	items := make([]*pb.Fossil, len(pageItems))
-	for i, d := range pageItems {
-		items[i] = fossilToProto(d)
+	items := make([]*pb.Fossil, len(fossils))
+	for i, d := range fossils {
+		items[i] = fossilToProto(&d)
 	}
 
 	return &pb.ListFossilsResponse{
 		Items:    items,
-		Metadata: &pb.ListMeta{Page: page, Size: size, Total: total},
+		Metadata: &pb.ListMeta{Page: page, Size: size, Total: int32(paging.Total)},
 	}, nil
 }
 
@@ -155,7 +149,10 @@ func (h *fossilGRPCHandler) WatchFossils(req *pb.WatchFossilsRequest, stream grp
 	}
 
 	ctx := stream.Context()
-	sub := broker.Subscribe(ctx)
+	sub, err := broker.Subscribe(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "failed to subscribe: %v", err)
+	}
 	glog.V(4).Infof("WatchFossils: subscriber %s connected", sub.ID)
 
 	for {
@@ -173,7 +170,7 @@ func (h *fossilGRPCHandler) WatchFossils(req *pb.WatchFossilsRequest, stream grp
 			}
 
 			watchEvent := &pb.FossilWatchEvent{
-				Type:       apiEventTypeToProto(evt.EventType),
+				Type:       grpcutil.APIEventTypeToProto(evt.EventType),
 				ResourceId: evt.SourceID,
 			}
 

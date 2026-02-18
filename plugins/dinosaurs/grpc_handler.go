@@ -12,16 +12,18 @@ import (
 	pb "github.com/openshift-online/rh-trex-ai/pkg/api/grpc/rh_trex/v1"
 	pkgserver "github.com/openshift-online/rh-trex-ai/pkg/server"
 	"github.com/openshift-online/rh-trex-ai/pkg/server/grpcutil"
+	"github.com/openshift-online/rh-trex-ai/pkg/services"
 )
 
 type dinosaurGRPCHandler struct {
 	pb.UnimplementedDinosaurServiceServer
 	service    DinosaurService
+	generic    services.GenericService
 	brokerFunc func() *pkgserver.EventBroker
 }
 
-func NewDinosaurGRPCHandler(svc DinosaurService, brokerFunc func() *pkgserver.EventBroker) pb.DinosaurServiceServer {
-	return &dinosaurGRPCHandler{service: svc, brokerFunc: brokerFunc}
+func NewDinosaurGRPCHandler(svc DinosaurService, generic services.GenericService, brokerFunc func() *pkgserver.EventBroker) pb.DinosaurServiceServer {
+	return &dinosaurGRPCHandler{service: svc, generic: generic, brokerFunc: brokerFunc}
 }
 
 func (h *dinosaurGRPCHandler) GetDinosaur(ctx context.Context, req *pb.GetDinosaurRequest) (*pb.Dinosaur, error) {
@@ -31,7 +33,7 @@ func (h *dinosaurGRPCHandler) GetDinosaur(ctx context.Context, req *pb.GetDinosa
 
 	dinosaur, svcErr := h.service.Get(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return dinosaurToProto(dinosaur), nil
 }
@@ -46,7 +48,7 @@ func (h *dinosaurGRPCHandler) CreateDinosaur(ctx context.Context, req *pb.Create
 	}
 	result, svcErr := h.service.Create(ctx, dinosaur)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return dinosaurToProto(result), nil
 }
@@ -63,14 +65,14 @@ func (h *dinosaurGRPCHandler) UpdateDinosaur(ctx context.Context, req *pb.Update
 
 	dinosaur, svcErr := h.service.Get(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	if req.Species != nil {
 		dinosaur.Species = *req.Species
 	}
 	result, svcErr := h.service.Replace(ctx, dinosaur)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return dinosaurToProto(result), nil
 }
@@ -82,7 +84,7 @@ func (h *dinosaurGRPCHandler) DeleteDinosaur(ctx context.Context, req *pb.Delete
 
 	svcErr := h.service.Delete(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return &pb.DeleteDinosaurResponse{}, nil
 }
@@ -90,33 +92,25 @@ func (h *dinosaurGRPCHandler) DeleteDinosaur(ctx context.Context, req *pb.Delete
 func (h *dinosaurGRPCHandler) ListDinosaurs(ctx context.Context, req *pb.ListDinosaursRequest) (*pb.ListDinosaursResponse, error) {
 	page, size := grpcutil.NormalizePagination(req.Page, req.Size)
 
-	allDinosaurs, svcErr := h.service.All(ctx)
+	listArgs := &services.ListArguments{
+		Page: int(page),
+		Size: int64(size),
+	}
+
+	var dinosaurs []Dinosaur
+	paging, svcErr := h.generic.List(ctx, "id", listArgs, &dinosaurs)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 
-	total := int32(len(allDinosaurs))
-	start := (page - 1) * size
-	if start >= total {
-		return &pb.ListDinosaursResponse{
-			Items:    []*pb.Dinosaur{},
-			Metadata: &pb.ListMeta{Page: page, Size: size, Total: total},
-		}, nil
-	}
-	end := start + size
-	if end > total {
-		end = total
-	}
-	pageItems := allDinosaurs[start:end]
-
-	items := make([]*pb.Dinosaur, len(pageItems))
-	for i, d := range pageItems {
-		items[i] = dinosaurToProto(d)
+	items := make([]*pb.Dinosaur, len(dinosaurs))
+	for i, d := range dinosaurs {
+		items[i] = dinosaurToProto(&d)
 	}
 
 	return &pb.ListDinosaursResponse{
 		Items:    items,
-		Metadata: &pb.ListMeta{Page: page, Size: size, Total: total},
+		Metadata: &pb.ListMeta{Page: page, Size: size, Total: int32(paging.Total)},
 	}, nil
 }
 
@@ -127,7 +121,10 @@ func (h *dinosaurGRPCHandler) WatchDinosaurs(req *pb.WatchDinosaursRequest, stre
 	}
 
 	ctx := stream.Context()
-	sub := broker.Subscribe(ctx)
+	sub, err := broker.Subscribe(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "failed to subscribe: %v", err)
+	}
 	glog.V(4).Infof("WatchDinosaurs: subscriber %s connected", sub.ID)
 
 	for {
@@ -145,7 +142,7 @@ func (h *dinosaurGRPCHandler) WatchDinosaurs(req *pb.WatchDinosaursRequest, stre
 			}
 
 			watchEvent := &pb.DinosaurWatchEvent{
-				Type:       apiEventTypeToProto(evt.EventType),
+				Type:       grpcutil.APIEventTypeToProto(evt.EventType),
 				ResourceId: evt.SourceID,
 			}
 

@@ -77,13 +77,14 @@ func init() {
 	pkgserver.RegisterGRPCService("dinosaurs", func(grpcServer *grpc.Server, services pkgserver.ServicesInterface) {
 		envServices := services.(*environments.Services)
 		dinosaurService := Service(envServices)
+		genericService := generic.Service(envServices)
 		brokerFunc := func() *pkgserver.EventBroker {
 			if obj := envServices.GetService("EventBroker"); obj != nil {
 				return obj.(*pkgserver.EventBroker)
 			}
 			return nil
 		}
-		pb.RegisterDinosaurServiceServer(grpcServer, NewDinosaurGRPCHandler(dinosaurService, brokerFunc))
+		pb.RegisterDinosaurServiceServer(grpcServer, NewDinosaurGRPCHandler(dinosaurService, genericService, brokerFunc))
 	})
 
 	presenters.RegisterPath(Dinosaur{}, "dinosaurs")

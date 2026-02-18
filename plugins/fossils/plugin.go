@@ -77,13 +77,14 @@ func init() {
 	pkgserver.RegisterGRPCService("fossils", func(grpcServer *grpc.Server, services pkgserver.ServicesInterface) {
 		envServices := services.(*environments.Services)
 		fossilService := Service(envServices)
+		genericService := generic.Service(envServices)
 		brokerFunc := func() *pkgserver.EventBroker {
 			if obj := envServices.GetService("EventBroker"); obj != nil {
 				return obj.(*pkgserver.EventBroker)
 			}
 			return nil
 		}
-		pb.RegisterFossilServiceServer(grpcServer, NewFossilGRPCHandler(fossilService, brokerFunc))
+		pb.RegisterFossilServiceServer(grpcServer, NewFossilGRPCHandler(fossilService, genericService, brokerFunc))
 	})
 
 	presenters.RegisterPath(Fossil{}, "fossils")

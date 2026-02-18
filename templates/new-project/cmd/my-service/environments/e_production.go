@@ -36,8 +36,8 @@ func (e *ProductionEnvImpl) OverrideClients(c *pkgenv.Clients) error {
 func (e *ProductionEnvImpl) Flags() map[string]string {
 	return map[string]string{
 		"v":               "1",
-		"ocm-debug":       "false",
-		"enable-ocm-mock": "false",
+		"debug":           "false",
+		"enable-mock":     "false",
 		"enable-sentry":   "true",
 	}
 }

@@ -17,7 +17,7 @@ type ControllersServer struct {
 }
 
 func (s ControllersServer) Start() {
-	log := logger.NewOCMLogger(context.Background())
+	log := logger.NewLogger(context.Background())
 	log.Infof("Kind controller listening for events")
 	s.SessionFactory.NewListener(context.Background(), "events", func(id string) {
 		s.KindControllerManager.Handle(id)

@@ -39,8 +39,8 @@ func (e *DevEnvImpl) Flags() map[string]string {
 	return map[string]string{
 		"v":                      "10",
 		"enable-authz":           "false",
-		"ocm-debug":              "false",
-		"enable-ocm-mock":        "true",
+		"debug":                  "false",
+		"enable-mock":             "true",
 		"enable-https":           "false",
 		"enable-metrics-https":   "false",
 		"api-server-hostname":    "localhost",

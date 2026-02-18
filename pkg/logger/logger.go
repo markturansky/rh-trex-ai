@@ -10,17 +10,17 @@ import (
 	"github.com/openshift-online/rh-trex-ai/pkg/util"
 )
 
-type OCMLogger interface {
-	V(level int32) OCMLogger
+type Logger interface {
+	V(level int32) Logger
 	Infof(format string, args ...interface{})
-	Extra(key string, value interface{}) OCMLogger
+	Extra(key string, value interface{}) Logger
 	Info(message string)
 	Warning(message string)
 	Error(message string)
 	Fatal(message string)
 }
 
-var _ OCMLogger = &logger{}
+var _ Logger = &logger{}
 
 type extra map[string]interface{}
 
@@ -34,8 +34,7 @@ type logger struct {
 	extra     extra
 }
 
-// NewOCMLogger creates a new logger instance with a default verbosity of 1
-func NewOCMLogger(ctx context.Context) OCMLogger {
+func NewLogger(ctx context.Context) Logger {
 	logger := &logger{
 		context:   ctx,
 		level:     1,
@@ -88,7 +87,7 @@ func (l *logger) prepareLogPrefixf(format string, args ...interface{}) string {
 	return fmt.Sprintf("%s%s", prefix, orig)
 }
 
-func (l *logger) V(level int32) OCMLogger {
+func (l *logger) V(level int32) Logger {
 	return &logger{
 		context:   l.context,
 		accountID: l.accountID,
@@ -103,7 +102,7 @@ func (l *logger) Infof(format string, args ...interface{}) {
 	glog.V(glog.Level(l.level)).Infof("%s", prefixed)
 }
 
-func (l *logger) Extra(key string, value interface{}) OCMLogger {
+func (l *logger) Extra(key string, value interface{}) Logger {
 	l.extra[key] = value
 	return l
 }

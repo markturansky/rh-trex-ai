@@ -14,7 +14,7 @@ import (
 
 	"github.com/openshift-online/rh-trex-ai/pkg/config"
 	"github.com/openshift-online/rh-trex-ai/pkg/db"
-	ocmlogger "github.com/openshift-online/rh-trex-ai/pkg/logger"
+	trexlogger "github.com/openshift-online/rh-trex-ai/pkg/logger"
 )
 
 type Default struct {
@@ -98,7 +98,7 @@ func (f *Default) DirectDB() *sql.DB {
 }
 
 func waitForNotification(l *pq.Listener, callback func(id string)) {
-	logger := ocmlogger.NewOCMLogger(context.Background())
+	logger := trexlogger.NewLogger(context.Background())
 	for {
 		select {
 		case n := <-l.Notify:
@@ -116,7 +116,7 @@ func waitForNotification(l *pq.Listener, callback func(id string)) {
 }
 
 func newListener(ctx context.Context, connstr, channel string, callback func(id string)) {
-	logger := ocmlogger.NewOCMLogger(ctx)
+	logger := trexlogger.NewLogger(ctx)
 
 	plog := func(ev pq.ListenerEventType, err error) {
 		if err != nil {

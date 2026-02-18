@@ -29,7 +29,7 @@ func (writer *LoggingWriter) WriteHeader(status int) {
 }
 
 func (writer *LoggingWriter) log(logMsg string, err error) {
-	log := logger.NewOCMLogger(writer.request.Context())
+	log := logger.NewLogger(writer.request.Context())
 	switch err {
 	case nil:
 		log.V(Threshold).Infof(logMsg)

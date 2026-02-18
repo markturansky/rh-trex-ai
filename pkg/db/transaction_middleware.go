@@ -18,7 +18,7 @@ func TransactionMiddleware(next http.Handler, connection SessionFactory) http.Ha
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Create a new Context with the transaction stored in it.
 		ctx, err := NewContext(r.Context(), connection)
-		log := logger.NewOCMLogger(ctx)
+		log := logger.NewLogger(ctx)
 		if err != nil {
 			log.Extra("error", err.Error()).Error("Could not create transaction")
 			// use default error to avoid exposing internals to users
