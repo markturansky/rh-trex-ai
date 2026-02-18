@@ -56,7 +56,7 @@ func (r ApiApiRhTrexAiV1DinosaursGetRequest) OrderBy(orderBy string) ApiApiRhTre
 	return r
 }
 
-// Supplies a comma-separated list of fields to be returned. Fields of sub-structures and of arrays use &lt;structure&gt;.&lt;field&gt; notation. &lt;stucture&gt;.* means all field of a structure Example: For each Subscription to get id, href, plan(id and kind) and labels (all fields)  &#x60;&#x60;&#x60; ocm get subscriptions --parameter fields&#x3D;id,href,plan.id,plan.kind,labels.* --parameter fetchLabels&#x3D;true &#x60;&#x60;&#x60;
+// Supplies a comma-separated list of fields to be returned. Fields of sub-structures and of arrays use &lt;structure&gt;.&lt;field&gt; notation. &lt;stucture&gt;.* means all field of a structure Example: For each Subscription to get id, href, plan(id and kind) and labels (all fields)  &#x60;&#x60;&#x60; curl &#39;/api/v1/subscriptions?fields&#x3D;id,href,plan.id,plan.kind,labels.*&amp;fetchLabels&#x3D;true&#39; &#x60;&#x60;&#x60;
 func (r ApiApiRhTrexAiV1DinosaursGetRequest) Fields(fields string) ApiApiRhTrexAiV1DinosaursGetRequest {
 	r.fields = &fields
 	return r
@@ -730,7 +730,7 @@ func (r ApiApiRhTrexAiV1FossilsGetRequest) OrderBy(orderBy string) ApiApiRhTrexA
 	return r
 }
 
-// Supplies a comma-separated list of fields to be returned. Fields of sub-structures and of arrays use &lt;structure&gt;.&lt;field&gt; notation. &lt;stucture&gt;.* means all field of a structure Example: For each Subscription to get id, href, plan(id and kind) and labels (all fields)  &#x60;&#x60;&#x60; ocm get subscriptions --parameter fields&#x3D;id,href,plan.id,plan.kind,labels.* --parameter fetchLabels&#x3D;true &#x60;&#x60;&#x60;
+// Supplies a comma-separated list of fields to be returned. Fields of sub-structures and of arrays use &lt;structure&gt;.&lt;field&gt; notation. &lt;stucture&gt;.* means all field of a structure Example: For each Subscription to get id, href, plan(id and kind) and labels (all fields)  &#x60;&#x60;&#x60; curl &#39;/api/v1/subscriptions?fields&#x3D;id,href,plan.id,plan.kind,labels.*&amp;fetchLabels&#x3D;true&#39; &#x60;&#x60;&#x60;
 func (r ApiApiRhTrexAiV1FossilsGetRequest) Fields(fields string) ApiApiRhTrexAiV1FossilsGetRequest {
 	r.fields = &fields
 	return r

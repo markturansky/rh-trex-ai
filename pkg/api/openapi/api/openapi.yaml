@@ -84,7 +84,7 @@ paths:
           Example: For each Subscription to get id, href, plan(id and kind) and labels (all fields)
 
           ```
-          ocm get subscriptions --parameter fields=id,href,plan.id,plan.kind,labels.* --parameter fetchLabels=true
+          curl '/api/v1/subscriptions?fields=id,href,plan.id,plan.kind,labels.*&fetchLabels=true'
           ```
         explode: true
         in: query
@@ -350,7 +350,7 @@ paths:
           Example: For each Subscription to get id, href, plan(id and kind) and labels (all fields)
 
           ```
-          ocm get subscriptions --parameter fields=id,href,plan.id,plan.kind,labels.* --parameter fetchLabels=true
+          curl '/api/v1/subscriptions?fields=id,href,plan.id,plan.kind,labels.*&fetchLabels=true'
           ```
         explode: true
         in: query
@@ -628,7 +628,7 @@ components:
         Example: For each Subscription to get id, href, plan(id and kind) and labels (all fields)
 
         ```
-        ocm get subscriptions --parameter fields=id,href,plan.id,plan.kind,labels.* --parameter fetchLabels=true
+        curl '/api/v1/subscriptions?fields=id,href,plan.id,plan.kind,labels.*&fetchLabels=true'
         ```
       explode: true
       in: query
