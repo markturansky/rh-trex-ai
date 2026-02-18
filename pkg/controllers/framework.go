@@ -75,7 +75,7 @@ func (km *KindControllerManager) add(source string, ev api.EventType, fns []Cont
 func (km *KindControllerManager) Handle(id string) {
 
 	ctx := context.Background()
-	logger := logger.NewOCMLogger(ctx)
+	logger := logger.NewLogger(ctx)
 
 	// lock the Event with a fail-fast advisory lock context.
 	// this allows concurrent processing of many events by one or many controller managers.
@@ -98,7 +98,7 @@ func (km *KindControllerManager) Handle(id string) {
 
 func (km *KindControllerManager) handle(ctx context.Context, id string) {
 
-	log := logger.NewOCMLogger(ctx)
+	log := logger.NewLogger(ctx)
 
 	event, err := km.events.Get(ctx, id)
 

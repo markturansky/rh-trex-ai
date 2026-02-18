@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/openshift-online/rh-trex-ai/pkg/environments"
+	"github.com/openshift-online/rh-trex-ai/pkg/server/grpcutil"
 )
 
 type grpcAPIServer struct {
@@ -21,19 +22,24 @@ type grpcAPIServer struct {
 var _ Server = &grpcAPIServer{}
 
 func NewDefaultGRPCServer(env *environments.Env) Server {
+	var keyProvider *grpcutil.JWKKeyProvider
+	if env.Config.Server.EnableJWT {
+		keyProvider = grpcutil.NewJWKKeyProvider(env.Config.Server.JwkCertURL, env.Config.Server.JwkCertFile)
+	}
+
 	opts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
 			RecoveryUnaryInterceptor(env.Config.Sentry.Timeout),
 			LoggingUnaryInterceptor(),
 			MetricsUnaryInterceptor(),
 			TransactionUnaryInterceptor(env.Database.SessionFactory),
-			AuthUnaryInterceptor(env),
+			AuthUnaryInterceptor(env, keyProvider),
 		),
 		grpc.ChainStreamInterceptor(
 			RecoveryStreamInterceptor(env.Config.Sentry.Timeout),
 			LoggingStreamInterceptor(),
 			MetricsStreamInterceptor(),
-			AuthStreamInterceptor(env),
+			AuthStreamInterceptor(env, keyProvider),
 		),
 	}
 

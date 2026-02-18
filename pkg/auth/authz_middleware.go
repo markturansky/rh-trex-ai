@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/openshift-online/rh-trex-ai/pkg/client/ocm"
+	"github.com/openshift-online/rh-trex-ai/pkg/client/apiclient"
 )
 
 type AuthorizationMiddleware interface {
@@ -24,14 +24,14 @@ type authzMiddleware struct {
 	action       string
 	resourceType string
 
-	ocmClient *ocm.Client
+	apiClient *apiclient.Client
 }
 
 var _ AuthorizationMiddleware = &authzMiddleware{}
 
-func NewAuthzMiddleware(ocmClient *ocm.Client, action, resourceType string) AuthorizationMiddleware {
+func NewAuthzMiddleware(apiClient *apiclient.Client, action, resourceType string) AuthorizationMiddleware {
 	return &authzMiddleware{
-		ocmClient:    ocmClient,
+		apiClient:    apiClient,
 		action:       action,
 		resourceType: resourceType,
 	}
@@ -51,7 +51,7 @@ func (a authzMiddleware) AuthorizeApi(next http.Handler) http.Handler {
 			return
 		}
 
-		allowed, err := a.ocmClient.Authorization.AccessReview(
+		allowed, err := a.apiClient.Authorization.AccessReview(
 			ctx, username, a.action, a.resourceType, "", "", "")
 		if err != nil {
 			_ = fmt.Errorf("unable to make authorization request: %s", err)

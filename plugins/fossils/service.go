@@ -47,7 +47,7 @@ type sqlFossilService struct {
 }
 
 func (s *sqlFossilService) OnUpsert(ctx context.Context, id string) error {
-	logger := logger.NewOCMLogger(ctx)
+	logger := logger.NewLogger(ctx)
 
 	fossil, err := s.fossilDao.Get(ctx, id)
 	if err != nil {
@@ -60,7 +60,7 @@ func (s *sqlFossilService) OnUpsert(ctx context.Context, id string) error {
 }
 
 func (s *sqlFossilService) OnDelete(ctx context.Context, id string) error {
-	logger := logger.NewOCMLogger(ctx)
+	logger := logger.NewLogger(ctx)
 	logger.Infof("This fossil has been deleted: %s", id)
 	return nil
 }

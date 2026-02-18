@@ -50,7 +50,7 @@ func NewAdvisoryLockFactory(connection SessionFactory) *AdvisoryLockFactory {
 }
 
 func (f *AdvisoryLockFactory) NewAdvisoryLock(ctx context.Context, id string, lockType LockType) (string, error) {
-	log := logger.NewOCMLogger(ctx)
+	log := logger.NewLogger(ctx)
 
 	lock, err := f.newLock(ctx, id, lockType)
 	if err != nil {
@@ -75,7 +75,7 @@ func (f *AdvisoryLockFactory) NewAdvisoryLock(ctx context.Context, id string, lo
 }
 
 func (f *AdvisoryLockFactory) NewNonBlockingLock(ctx context.Context, id string, lockType LockType) (string, bool, error) {
-	log := logger.NewOCMLogger(ctx)
+	log := logger.NewLogger(ctx)
 
 	lock, err := f.newLock(ctx, id, lockType)
 	if err != nil {
@@ -119,7 +119,7 @@ func (f *AdvisoryLockFactory) newLock(ctx context.Context, id string, lockType L
 
 // Unlock searches current locks and unlocks the one matching its owner id.
 func (f *AdvisoryLockFactory) Unlock(ctx context.Context, uuid string) {
-	log := logger.NewOCMLogger(ctx)
+	log := logger.NewLogger(ctx)
 
 	if uuid == "" {
 		return

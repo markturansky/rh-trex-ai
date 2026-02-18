@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/openshift-online/rh-trex-ai/pkg/auth"
-	"github.com/openshift-online/rh-trex-ai/pkg/client/ocm"
+	"github.com/openshift-online/rh-trex-ai/pkg/client/apiclient"
 	"github.com/openshift-online/rh-trex-ai/pkg/config"
 	"github.com/openshift-online/rh-trex-ai/pkg/db"
 )
@@ -15,7 +15,7 @@ const (
 	DevelopmentEnv        string = "development"
 	ProductionEnv         string = "production"
 
-	EnvironmentStringKey string = "OCM_ENV"
+	EnvironmentStringKey string = "API_ENV"
 	EnvironmentDefault          = DevelopmentEnv
 )
 
@@ -70,14 +70,14 @@ func (s *Services) InitRegistry() {
 }
 
 type Clients struct {
-	OCM *ocm.Client
+	APIClient *apiclient.Client
 }
 
 type ConfigDefaults struct {
 	Server   map[string]interface{}
 	Metrics  map[string]interface{}
 	Database map[string]interface{}
-	OCM      map[string]interface{}
+	APIClient map[string]interface{}
 	Options  map[string]interface{}
 }
 

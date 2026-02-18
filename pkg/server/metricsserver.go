@@ -45,7 +45,7 @@ func (s metricsServer) Serve(listener net.Listener) {
 }
 
 func (s metricsServer) Start() {
-	log := logger.NewOCMLogger(context.Background())
+	log := logger.NewLogger(context.Background())
 	var err error
 	if s.config.EnableHTTPS {
 		if s.config.HTTPSCertFile == "" || s.config.HTTPSKeyFile == "" {

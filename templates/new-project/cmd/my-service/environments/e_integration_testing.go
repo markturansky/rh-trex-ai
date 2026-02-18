@@ -47,12 +47,12 @@ func (e *IntegrationTestingEnvImpl) Flags() map[string]string {
 	return map[string]string{
 		"v":                    "0",
 		"logtostderr":          "true",
-		"ocm-base-url":         "https://api.integration.openshift.com",
+		"api-base-url":         "https://api.integration.openshift.com",
 		"enable-https":         "false",
 		"enable-metrics-https": "false",
 		"enable-authz":         "true",
-		"ocm-debug":            "false",
-		"enable-ocm-mock":      "true",
+		"debug":                "false",
+		"enable-mock":          "true",
 		"enable-sentry":        "false",
 	}
 }

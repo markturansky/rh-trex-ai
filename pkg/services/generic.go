@@ -46,7 +46,7 @@ type listContext struct {
 	args             *ListArguments
 	username         string
 	pagingMeta       *api.PagingMeta
-	ulog             *logger.OCMLogger
+	ulog             *logger.Logger
 	resourceList     interface{}
 	disallowedFields *map[string]string
 	resourceType     string
@@ -56,7 +56,7 @@ type listContext struct {
 }
 
 func (s *sqlGenericService) newListContext(ctx context.Context, username string, args *ListArguments, resourceList interface{}) (*listContext, interface{}, *errors.ServiceError) {
-	log := logger.NewOCMLogger(ctx)
+	log := logger.NewLogger(ctx)
 	resourceModel := reflect.TypeOf(resourceList).Elem().Elem()
 	resourceTypeStr := resourceModel.Name()
 	if resourceTypeStr == "" {

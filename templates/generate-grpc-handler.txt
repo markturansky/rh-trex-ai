@@ -12,16 +12,18 @@ import (
 	pb "{{.Library}}/pkg/api/grpc/rh_trex/v1"
 	pkgserver "{{.Library}}/pkg/server"
 	"{{.Library}}/pkg/server/grpcutil"
+	"{{.Library}}/pkg/services"
 )
 
 type {{.KindLowerSingular}}GRPCHandler struct {
 	pb.Unimplemented{{.Kind}}ServiceServer
 	service    {{.Kind}}Service
+	generic    services.GenericService
 	brokerFunc func() *pkgserver.EventBroker
 }
 
-func New{{.Kind}}GRPCHandler(svc {{.Kind}}Service, brokerFunc func() *pkgserver.EventBroker) pb.{{.Kind}}ServiceServer {
-	return &{{.KindLowerSingular}}GRPCHandler{service: svc, brokerFunc: brokerFunc}
+func New{{.Kind}}GRPCHandler(svc {{.Kind}}Service, generic services.GenericService, brokerFunc func() *pkgserver.EventBroker) pb.{{.Kind}}ServiceServer {
+	return &{{.KindLowerSingular}}GRPCHandler{service: svc, generic: generic, brokerFunc: brokerFunc}
 }
 
 func (h *{{.KindLowerSingular}}GRPCHandler) Get{{.Kind}}(ctx context.Context, req *pb.Get{{.Kind}}Request) (*pb.{{.Kind}}, error) {
@@ -31,7 +33,7 @@ func (h *{{.KindLowerSingular}}GRPCHandler) Get{{.Kind}}(ctx context.Context, re
 
 	{{.KindLowerSingular}}, svcErr := h.service.Get(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return {{.KindLowerSingular}}ToProto({{.KindLowerSingular}}), nil
 }
@@ -72,7 +74,7 @@ func (h *{{.KindLowerSingular}}GRPCHandler) Create{{.Kind}}(ctx context.Context,
 	}
 	result, svcErr := h.service.Create(ctx, {{.KindLowerSingular}})
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return {{.KindLowerSingular}}ToProto(result), nil
 }
@@ -93,7 +95,7 @@ func (h *{{.KindLowerSingular}}GRPCHandler) Update{{.Kind}}(ctx context.Context,
 
 	{{.KindLowerSingular}}, svcErr := h.service.Get(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	{{- $kindLowerSingular := .KindLowerSingular}}
 	{{- range .Fields}}
@@ -115,7 +117,7 @@ func (h *{{.KindLowerSingular}}GRPCHandler) Update{{.Kind}}(ctx context.Context,
 	{{- end}}
 	result, svcErr := h.service.Replace(ctx, {{.KindLowerSingular}})
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return {{.KindLowerSingular}}ToProto(result), nil
 }
@@ -127,7 +129,7 @@ func (h *{{.KindLowerSingular}}GRPCHandler) Delete{{.Kind}}(ctx context.Context,
 
 	svcErr := h.service.Delete(ctx, req.Id)
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 	return &pb.Delete{{.Kind}}Response{}, nil
 }
@@ -135,33 +137,25 @@ func (h *{{.KindLowerSingular}}GRPCHandler) Delete{{.Kind}}(ctx context.Context,
 func (h *{{.KindLowerSingular}}GRPCHandler) List{{.KindPlural}}(ctx context.Context, req *pb.List{{.KindPlural}}Request) (*pb.List{{.KindPlural}}Response, error) {
 	page, size := grpcutil.NormalizePagination(req.Page, req.Size)
 
-	all{{.KindPlural}}, svcErr := h.service.All(ctx)
+	listArgs := &services.ListArguments{
+		Page: int(page),
+		Size: int64(size),
+	}
+
+	var {{.KindLowerPlural}} []{{.Kind}}
+	paging, svcErr := h.generic.List(ctx, "id", listArgs, &{{.KindLowerPlural}})
 	if svcErr != nil {
-		return nil, serviceErrorToGRPC(svcErr)
+		return nil, grpcutil.ServiceErrorToGRPC(svcErr)
 	}
 
-	total := int32(len(all{{.KindPlural}}))
-	start := (page - 1) * size
-	if start >= total {
-		return &pb.List{{.KindPlural}}Response{
-			Items:    []*pb.{{.Kind}}{},
-			Metadata: &pb.ListMeta{Page: page, Size: size, Total: total},
-		}, nil
-	}
-	end := start + size
-	if end > total {
-		end = total
-	}
-	pageItems := all{{.KindPlural}}[start:end]
-
-	items := make([]*pb.{{.Kind}}, len(pageItems))
-	for i, d := range pageItems {
-		items[i] = {{.KindLowerSingular}}ToProto(d)
+	items := make([]*pb.{{.Kind}}, len({{.KindLowerPlural}}))
+	for i, d := range {{.KindLowerPlural}} {
+		items[i] = {{.KindLowerSingular}}ToProto(&d)
 	}
 
 	return &pb.List{{.KindPlural}}Response{
 		Items:    items,
-		Metadata: &pb.ListMeta{Page: page, Size: size, Total: total},
+		Metadata: &pb.ListMeta{Page: page, Size: size, Total: int32(paging.Total)},
 	}, nil
 }
 
@@ -172,7 +166,10 @@ func (h *{{.KindLowerSingular}}GRPCHandler) Watch{{.KindPlural}}(req *pb.Watch{{
 	}
 
 	ctx := stream.Context()
-	sub := broker.Subscribe(ctx)
+	sub, err := broker.Subscribe(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "failed to subscribe: %v", err)
+	}
 	glog.V(4).Infof("Watch{{.KindPlural}}: subscriber %s connected", sub.ID)
 
 	for {
@@ -190,7 +187,7 @@ func (h *{{.KindLowerSingular}}GRPCHandler) Watch{{.KindPlural}}(req *pb.Watch{{
 			}
 
 			watchEvent := &pb.{{.Kind}}WatchEvent{
-				Type:       apiEventTypeToProto(evt.EventType),
+				Type:       grpcutil.APIEventTypeToProto(evt.EventType),
 				ResourceId: evt.SourceID,
 			}
 

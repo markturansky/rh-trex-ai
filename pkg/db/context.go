@@ -22,7 +22,7 @@ func NewContext(ctx context.Context, connection SessionFactory) (context.Context
 
 // Resolve resolves the current transaction according to the rollback flag.
 func Resolve(ctx context.Context) {
-	log := logger.NewOCMLogger(ctx)
+	log := logger.NewLogger(ctx)
 	tx, ok := dbContext.Transaction(ctx)
 	if !ok {
 		log.Error("Could not retrieve transaction from context")
@@ -46,7 +46,7 @@ func Resolve(ctx context.Context) {
 
 // MarkForRollback flags the transaction stored in the context for rollback and logs whatever error caused the rollback
 func MarkForRollback(ctx context.Context, err error) {
-	log := logger.NewOCMLogger(ctx)
+	log := logger.NewLogger(ctx)
 	transaction, ok := dbContext.Transaction(ctx)
 	if !ok {
 		log.Error("failed to mark transaction for rollback: could not retrieve transaction from context")

@@ -19,6 +19,7 @@ import (
 	"github.com/openshift-online/rh-trex-ai/pkg/db"
 	"github.com/openshift-online/rh-trex-ai/pkg/environments"
 	"github.com/openshift-online/rh-trex-ai/pkg/logger"
+	"github.com/openshift-online/rh-trex-ai/pkg/server/grpcutil"
 )
 
 var (
@@ -44,6 +45,13 @@ func init() {
 	prometheus.MustRegister(grpcRequestDuration)
 }
 
+type wrappedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (w *wrappedServerStream) Context() context.Context { return w.ctx }
+
 func RecoveryUnaryInterceptor(sentryTimeout time.Duration) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer func() {
@@ -62,7 +70,7 @@ func LoggingUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
 		ctx = logger.WithOpID(ctx)
-		log := logger.NewOCMLogger(ctx)
+		log := logger.NewLogger(ctx)
 
 		resp, err := handler(ctx, req)
 
@@ -101,7 +109,7 @@ func TransactionUnaryInterceptor(sessionFactory db.SessionFactory) grpc.UnarySer
 	}
 }
 
-func AuthUnaryInterceptor(env *environments.Env) grpc.UnaryServerInterceptor {
+func AuthUnaryInterceptor(env *environments.Env, keyProvider *grpcutil.JWKKeyProvider) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if !env.Config.Server.EnableJWT {
 			return handler(ctx, req)
@@ -112,36 +120,9 @@ func AuthUnaryInterceptor(env *environments.Env) grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, status.Error(codes.Unauthenticated, "missing metadata")
-		}
-
-		authHeader := md.Get("authorization")
-		if len(authHeader) == 0 {
-			return nil, status.Error(codes.Unauthenticated, "missing authorization token")
-		}
-
-		token := strings.TrimPrefix(authHeader[0], "Bearer ")
-		token = strings.TrimPrefix(token, "bearer ")
-
-		parser := jwt.NewParser()
-		jwtToken, _, err := parser.ParseUnverified(token, jwt.MapClaims{})
+		username, err := authenticateGRPCRequest(ctx, keyProvider)
 		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, "invalid token format")
-		}
-
-		claims, ok := jwtToken.Claims.(jwt.MapClaims)
-		if !ok {
-			return nil, status.Error(codes.Unauthenticated, "invalid token claims")
-		}
-
-		username, _ := claims["username"].(string)
-		if username == "" {
-			username, _ = claims["preferred_username"].(string)
-		}
-		if username == "" {
-			return nil, status.Error(codes.Unauthenticated, "token missing username claim")
+			return nil, err
 		}
 
 		ctx = auth.SetUsernameContext(ctx, username)
@@ -167,10 +148,12 @@ func RecoveryStreamInterceptor(sentryTimeout time.Duration) grpc.StreamServerInt
 func LoggingStreamInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		start := time.Now()
-		log := logger.NewOCMLogger(ss.Context())
+		ctx := logger.WithOpID(ss.Context())
+		log := logger.NewLogger(ctx)
 		log.Infof("gRPC stream started %s", info.FullMethod)
 
-		err := handler(srv, ss)
+		wrapped := &wrappedServerStream{ServerStream: ss, ctx: ctx}
+		err := handler(srv, wrapped)
 
 		duration := time.Since(start)
 		code := status.Code(err)
@@ -194,44 +177,63 @@ func MetricsStreamInterceptor() grpc.StreamServerInterceptor {
 	}
 }
 
-func AuthStreamInterceptor(env *environments.Env) grpc.StreamServerInterceptor {
+func AuthStreamInterceptor(env *environments.Env, keyProvider *grpcutil.JWKKeyProvider) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if !env.Config.Server.EnableJWT {
 			return handler(srv, ss)
 		}
 
-		md, ok := metadata.FromIncomingContext(ss.Context())
-		if !ok {
-			return status.Error(codes.Unauthenticated, "missing metadata")
-		}
-
-		authHeader := md.Get("authorization")
-		if len(authHeader) == 0 {
-			return status.Error(codes.Unauthenticated, "missing authorization token")
-		}
-
-		token := strings.TrimPrefix(authHeader[0], "Bearer ")
-		token = strings.TrimPrefix(token, "bearer ")
-
-		parser := jwt.NewParser()
-		jwtToken, _, err := parser.ParseUnverified(token, jwt.MapClaims{})
+		username, err := authenticateGRPCRequest(ss.Context(), keyProvider)
 		if err != nil {
-			return status.Error(codes.Unauthenticated, "invalid token format")
+			return err
 		}
 
-		claims, ok := jwtToken.Claims.(jwt.MapClaims)
-		if !ok {
-			return status.Error(codes.Unauthenticated, "invalid token claims")
-		}
+		ctx := auth.SetUsernameContext(ss.Context(), username)
+		wrapped := &wrappedServerStream{ServerStream: ss, ctx: ctx}
 
-		username, _ := claims["username"].(string)
-		if username == "" {
-			username, _ = claims["preferred_username"].(string)
-		}
-		if username == "" {
-			return status.Error(codes.Unauthenticated, "token missing username claim")
-		}
-
-		return handler(srv, ss)
+		return handler(srv, wrapped)
 	}
+}
+
+func authenticateGRPCRequest(ctx context.Context, keyProvider *grpcutil.JWKKeyProvider) (string, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return "", status.Error(codes.Unauthenticated, "missing metadata")
+	}
+
+	authHeader := md.Get("authorization")
+	if len(authHeader) == 0 {
+		return "", status.Error(codes.Unauthenticated, "missing authorization token")
+	}
+
+	tokenStr := strings.TrimPrefix(authHeader[0], "Bearer ")
+	tokenStr = strings.TrimPrefix(tokenStr, "bearer ")
+
+	var jwtToken *jwt.Token
+	var err error
+
+	if keyProvider != nil {
+		jwtToken, err = jwt.ParseWithClaims(tokenStr, jwt.MapClaims{}, keyProvider.KeyFunc)
+	} else {
+		parser := jwt.NewParser()
+		jwtToken, _, err = parser.ParseUnverified(tokenStr, jwt.MapClaims{})
+	}
+	if err != nil {
+		return "", status.Errorf(codes.Unauthenticated, "invalid token: %v", err)
+	}
+
+	claims, ok := jwtToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", status.Error(codes.Unauthenticated, "invalid token claims")
+	}
+
+	username, _ := claims["username"].(string)
+	if username == "" {
+		username, _ = claims["preferred_username"].(string)
+	}
+	if username == "" {
+		return "", status.Error(codes.Unauthenticated, "token missing username claim")
+	}
+
+	return username, nil
 }

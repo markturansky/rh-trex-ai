@@ -47,7 +47,7 @@ type sqlDinosaurService struct {
 }
 
 func (s *sqlDinosaurService) OnUpsert(ctx context.Context, id string) error {
-	logger := logger.NewOCMLogger(ctx)
+	logger := logger.NewLogger(ctx)
 
 	dinosaur, err := s.dinosaurDao.Get(ctx, id)
 	if err != nil {
@@ -60,7 +60,7 @@ func (s *sqlDinosaurService) OnUpsert(ctx context.Context, id string) error {
 }
 
 func (s *sqlDinosaurService) OnDelete(ctx context.Context, id string) error {
-	logger := logger.NewOCMLogger(ctx)
+	logger := logger.NewLogger(ctx)
 	logger.Infof("This dinosaur has been deleted: %s", id)
 	return nil
 }
