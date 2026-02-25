@@ -19,6 +19,10 @@ paths:
     $ref: 'openapi.fossils.yaml#/paths/~1api~1rh-trex-ai~1v1~1fossils'
   /api/rh-trex-ai/v1/fossils/{id}:
     $ref: 'openapi.fossils.yaml#/paths/~1api~1rh-trex-ai~1v1~1fossils~1{id}'
+  /api/rh-trex-ai/v1/scientists:
+    $ref: 'openapi.scientists.yaml#/paths/~1api~1rh-trex-ai~1v1~1scientists'
+  /api/rh-trex-ai/v1/scientists/{id}:
+    $ref: 'openapi.scientists.yaml#/paths/~1api~1rh-trex-ai~1v1~1scientists~1{id}'
   # AUTO-ADD NEW PATHS
 components:
   securitySchemes:
@@ -82,6 +86,12 @@ components:
       $ref: 'openapi.fossils.yaml#/components/schemas/FossilList'
     FossilPatchRequest:
       $ref: 'openapi.fossils.yaml#/components/schemas/FossilPatchRequest'
+    Scientist:
+      $ref: 'openapi.scientists.yaml#/components/schemas/Scientist'
+    ScientistList:
+      $ref: 'openapi.scientists.yaml#/components/schemas/ScientistList'
+    ScientistPatchRequest:
+      $ref: 'openapi.scientists.yaml#/components/schemas/ScientistPatchRequest'
     # AUTO-ADD NEW SCHEMAS
   parameters:
     id:

@@ -2,13 +2,18 @@ package fossils_test
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"sync"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
 	pb "github.com/openshift-online/rh-trex-ai/pkg/api/grpc/rh_trex/v1"
+	"github.com/openshift-online/rh-trex-ai/pkg/api/openapi"
 	"github.com/openshift-online/rh-trex-ai/test"
 )
 
@@ -99,4 +104,139 @@ func TestGRPCFossilCRUD(t *testing.T) {
 	// Verify deletion
 	_, err = grpcClient.GetFossil(ctx, getReq)
 	Expect(err).To(HaveOccurred())
+}
+
+func TestGRPCWatchFossils(t *testing.T) {
+	h, client := test.RegisterIntegration(t)
+	h.StartControllersServer()
+
+	account := h.NewRandAccount()
+	ctx := h.NewAuthenticatedContext(account)
+	jwtToken := h.CreateJWTString(account)
+
+	const totalItems = 25
+
+	conn, err := grpc.NewClient(
+		h.GRPCAddress(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithPerRPCCredentials(&bearerToken{token: jwtToken}),
+	)
+	Expect(err).NotTo(HaveOccurred())
+	defer conn.Close()
+
+	grpcClient := pb.NewFossilServiceClient(conn)
+
+	locationNames := make(map[string]bool, totalItems)
+	for i := 0; i < totalItems; i++ {
+		locationNames[fmt.Sprintf("Site_%d", i)] = true
+	}
+
+	var sourceErr error
+	var sinkErr error
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	sinkReady := make(chan struct{})
+
+	go func() {
+		defer wg.Done()
+		<-sinkReady
+		time.Sleep(100 * time.Millisecond)
+
+		for location := range locationNames {
+			fossilInput := openapi.Fossil{
+				DiscoveryLocation: location,
+			}
+			_, resp, postErr := client.DefaultAPI.ApiRhTrexAiV1FossilsPost(ctx).Fossil(fossilInput).Execute()
+			if postErr != nil {
+				sourceErr = fmt.Errorf("REST POST failed for %s: %v", location, postErr)
+				return
+			}
+			if resp.StatusCode != 201 {
+				sourceErr = fmt.Errorf("REST POST unexpected status %d for %s", resp.StatusCode, location)
+				return
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		watchCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		defer cancel()
+
+		stream, streamErr := grpcClient.WatchFossils(watchCtx, &pb.WatchFossilsRequest{})
+		if streamErr != nil {
+			sinkErr = fmt.Errorf("WatchFossils failed: %v", streamErr)
+			close(sinkReady)
+			return
+		}
+
+		close(sinkReady)
+
+		seen := make(map[string]bool)
+		for {
+			evt, recvErr := stream.Recv()
+			if recvErr == io.EOF {
+				break
+			}
+			if recvErr != nil {
+				if watchCtx.Err() != nil {
+					sinkErr = fmt.Errorf("sink timed out: saw %d/%d items", len(seen), totalItems)
+				} else {
+					sinkErr = fmt.Errorf("stream recv error: %v", recvErr)
+				}
+				return
+			}
+
+			if evt.Type != pb.EventType_EVENT_TYPE_CREATED {
+				continue
+			}
+
+			if evt.ResourceId != "" {
+				seen[evt.ResourceId] = true
+			}
+
+			if len(seen) == totalItems {
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
+
+	Expect(sourceErr).NotTo(HaveOccurred(), "source goroutine error")
+	Expect(sinkErr).NotTo(HaveOccurred(), "sink goroutine error")
+
+	listResp, listErr := grpcClient.ListFossils(context.Background(), &pb.ListFossilsRequest{
+		Page: 1,
+		Size: 100,
+	})
+	Expect(listErr).NotTo(HaveOccurred())
+	Expect(int(listResp.Metadata.Total)).To(BeNumerically(">=", totalItems))
+}
+
+func TestGRPCFossilErrorHandling(t *testing.T) {
+	h, _ := test.RegisterIntegration(t)
+	h.StartControllersServer()
+
+	account := h.NewRandAccount()
+	jwtToken := h.CreateJWTString(account)
+
+	conn, err := grpc.NewClient(
+		h.GRPCAddress(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithPerRPCCredentials(&bearerToken{token: jwtToken}),
+	)
+	Expect(err).NotTo(HaveOccurred())
+	defer conn.Close()
+
+	grpcClient := pb.NewFossilServiceClient(conn)
+
+	getReq := &pb.GetFossilRequest{Id: "nonexistent"}
+	_, err = grpcClient.GetFossil(context.Background(), getReq)
+	Expect(err).To(HaveOccurred())
+
+	deleteReq := &pb.DeleteFossilRequest{Id: "nonexistent"}
+	_, err = grpcClient.DeleteFossil(context.Background(), deleteReq)
 }

@@ -261,6 +261,22 @@ func (l *AdvisoryLock) unlock() error {
 	return err
 }
 
+type NoOpLockFactory struct{}
+
+func NewNoOpLockFactory() *NoOpLockFactory {
+	return &NoOpLockFactory{}
+}
+
+func (f *NoOpLockFactory) NewAdvisoryLock(ctx context.Context, id string, lockType LockType) (string, error) {
+	return "", nil
+}
+
+func (f *NoOpLockFactory) NewNonBlockingLock(ctx context.Context, id string, lockType LockType) (string, bool, error) {
+	return "", true, nil
+}
+
+func (f *NoOpLockFactory) Unlock(ctx context.Context, uuid string) {}
+
 // hash string to int32 (postgres integer)
 // https://pkg.go.dev/math#pkg-constants
 // https://www.postgresql.org/docs/12/datatype-numeric.html

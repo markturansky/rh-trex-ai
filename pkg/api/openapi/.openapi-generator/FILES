@@ -16,6 +16,9 @@ docs/FossilList.md
 docs/FossilPatchRequest.md
 docs/List.md
 docs/ObjectReference.md
+docs/Scientist.md
+docs/ScientistList.md
+docs/ScientistPatchRequest.md
 git_push.sh
 go.mod
 go.sum
@@ -28,6 +31,9 @@ model_fossil_list.go
 model_fossil_patch_request.go
 model_list.go
 model_object_reference.go
+model_scientist.go
+model_scientist_list.go
+model_scientist_patch_request.go
 response.go
 test/api_default_test.go
 utils.go
