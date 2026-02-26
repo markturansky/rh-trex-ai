@@ -1,0 +1,29 @@
+import * as React from 'react';
+import { consoleFetch } from '@openshift-console/dynamic-plugin-sdk';
+
+export function useApiToken(): string | null {
+  const [token, setToken] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    consoleFetch('/api/openshift/api/v1/users/~')
+      .then((resp) => {
+        const authHeader =
+          (resp as any)?.headers?.get?.('Authorization') || '';
+        if (authHeader.startsWith('Bearer ')) {
+          setToken(authHeader.slice(7));
+        }
+      })
+      .catch(() => {});
+
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) {
+      setToken(meta.getAttribute('content') || null);
+    }
+
+    if (typeof (window as any).__OPENSHIFT_CONSOLE_TOKEN__ === 'string') {
+      setToken((window as any).__OPENSHIFT_CONSOLE_TOKEN__);
+    }
+  }, []);
+
+  return token;
+}

@@ -86,8 +86,9 @@ help:
 	@echo "make generate-sdk-python  generate Python SDK only"
 	@echo "make generate-sdk-ts      generate TypeScript SDK only"
 	@echo "make generate-cli         generate CLI from OpenAPI"
-	@echo "make generate-all         generate SDK + CLI"
-	@echo "make generate-clean       remove all generated SDK/CLI output"
+	@echo "make generate-all         generate SDK + CLI + console plugin"
+	@echo "make generate-console-plugin  generate OpenShift Console dynamic plugin"
+	@echo "make generate-clean       remove all generated SDK/CLI/plugin output"
 	@echo "$(fake)"
 .PHONY: help
 
@@ -407,6 +408,10 @@ CLI_OUT ?= $(PWD)/generated/cli
 CLI_BINARY ?= trex-cli
 CLI_MODULE ?= github.com/openshift-online/rh-trex-ai-cli
 
+# Console plugin generation output directory
+CONSOLE_PLUGIN_OUT ?= $(PWD)/generated/console-plugin
+CONSOLE_PLUGIN_NAME ?= rh-trex-ai-console
+
 .PHONY: generate-sdk
 generate-sdk:
 	@echo "Generating SDK from OpenAPI specs..."
@@ -463,8 +468,19 @@ generate-cli:
 		--project rh-trex-ai
 	@echo "CLI generated in $(CLI_OUT)"
 
+.PHONY: generate-console-plugin
+generate-console-plugin:
+	@echo "Generating OpenShift Console plugin from OpenAPI specs..."
+	cd scripts/console-plugin-generator && $(GO) run . \
+		--spec $(PWD)/openapi/openapi.yaml \
+		--out $(CONSOLE_PLUGIN_OUT) \
+		--name $(CONSOLE_PLUGIN_NAME) \
+		--api-prefix $(SDK_API_PREFIX) \
+		--project rh-trex-ai
+	@echo "Console plugin generated in $(CONSOLE_PLUGIN_OUT)"
+
 .PHONY: generate-all
-generate-all: generate-sdk generate-cli
+generate-all: generate-sdk generate-cli generate-console-plugin
 	@echo "All generators complete."
 
 .PHONY: generate-clean
