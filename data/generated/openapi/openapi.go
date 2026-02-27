@@ -1,9 +1,9 @@
 // Code generated for package openapi by go-bindata DO NOT EDIT. (@generated)
 // sources:
-// openapi/openapi.dinosaurs.yaml
-// openapi/openapi.fossils.yaml
-// openapi/openapi.scientists.yaml
-// openapi/openapi.yaml
+// ../../openapi/openapi.dinosaurs.yaml
+// ../../openapi/openapi.fossils.yaml
+// ../../openapi/openapi.scientists.yaml
+// ../../openapi/openapi.yaml
 package openapi
 
 import (
@@ -95,7 +95,7 @@ func openapiDinosaursYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openapi.dinosaurs.yaml", size: 9369, mode: os.FileMode(420), modTime: time.Unix(1771443593, 0)}
+	info := bindataFileInfo{name: "openapi.dinosaurs.yaml", size: 9369, mode: os.FileMode(420), modTime: time.Unix(1771443594, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -115,7 +115,7 @@ func openapiFossilsYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openapi.fossils.yaml", size: 9700, mode: os.FileMode(420), modTime: time.Unix(1771443593, 0)}
+	info := bindataFileInfo{name: "openapi.fossils.yaml", size: 9700, mode: os.FileMode(420), modTime: time.Unix(1772233784, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -135,7 +135,7 @@ func openapiScientistsYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openapi.scientists.yaml", size: 9491, mode: os.FileMode(420), modTime: time.Unix(1772148591, 0)}
+	info := bindataFileInfo{name: "openapi.scientists.yaml", size: 9491, mode: os.FileMode(420), modTime: time.Unix(1772233852, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -155,7 +155,7 @@ func openapiYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "openapi.yaml", size: 5620, mode: os.FileMode(420), modTime: time.Unix(1772148591, 0)}
+	info := bindataFileInfo{name: "openapi.yaml", size: 5620, mode: os.FileMode(420), modTime: time.Unix(1772233906, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
