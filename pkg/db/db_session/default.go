@@ -97,11 +97,13 @@ func (f *Default) DirectDB() *sql.DB {
 	return f.db
 }
 
-func waitForNotification(l *pq.Listener, callback func(id string)) {
-	logger := trexlogger.NewLogger(context.Background())
-	for {
-		select {
-		case n := <-l.Notify:
+func waitForNotification(ctx context.Context, l *pq.Listener, callback func(id string)) bool {
+	logger := trexlogger.NewLogger(ctx)
+	select {
+	case <-ctx.Done():
+		return false
+	case n := <-l.Notify:
+		if n != nil {
 			logger.Infof("Received data from channel [%s] : %s", n.Channel, n.Extra)
 			callback(n.Extra)
 		}
