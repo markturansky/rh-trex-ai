@@ -441,7 +441,6 @@ func generatePlugin(data pluginData, outDir string) error {
 		tmplMapping{"Dockerfile.tmpl", "Dockerfile", false},
 		tmplMapping{"src/index.ts.tmpl", "src/index.ts", false},
 		tmplMapping{"src/utils/api.ts.tmpl", "src/utils/api.ts", false},
-		tmplMapping{"src/hooks/useApiAuth.ts.tmpl", "src/hooks/useApiAuth.ts", false},
 		tmplMapping{"src/components/App.tsx.tmpl", "src/components/App.tsx", false},
 		tmplMapping{"src/components/ResourceNav.tsx.tmpl", "src/components/ResourceNav.tsx", false},
 		tmplMapping{"deploy/consoleplugin.yaml.tmpl", filepath.Join("deploy", "consoleplugin.yaml"), false},

@@ -23,7 +23,6 @@ import {
   Td,
 } from '@patternfly/react-table';
 import { createAPIClient } from '../utils/api';
-import { useApiToken } from '../hooks/useApiAuth';
 
 type {{.Resource.Name}}Row = Record<string, unknown>;
 
@@ -43,7 +42,6 @@ function cellValue(row: {{.Resource.Name}}Row, key: string, fieldType: string): 
 }
 
 const {{.Resource.Name}}ListPage: React.FC = () => {
-  const token = useApiToken();
   const history = useHistory();
   const [items, setItems] = React.useState<{{.Resource.Name}}Row[]>([]);
   const [total, setTotal] = React.useState(0);
@@ -53,11 +51,10 @@ const {{.Resource.Name}}ListPage: React.FC = () => {
   const [search, setSearch] = React.useState('');
 
   const fetchData = React.useCallback(async () => {
-    if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      const api = createAPIClient(token);
+      const api = createAPIClient();
       const resp = await api.{{.Resource.PluralLower}}.list({ page, size: PAGE_SIZE, search: search || undefined });
       setItems(resp.items);
       setTotal(resp.total);
@@ -66,7 +63,7 @@ const {{.Resource.Name}}ListPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, page, search]);
+  }, [page, search]);
 
   React.useEffect(() => { fetchData(); }, [fetchData]);
 

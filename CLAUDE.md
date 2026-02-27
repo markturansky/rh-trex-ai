@@ -68,7 +68,7 @@ Serves the rh-trex REST and gRPC APIs with full authentication, database connect
   - `--acl-file` - Access control list file
 
 - **OCM Integration:**
-  - `--enable-ocm-mock` - Enable mock OCM clients (default: true)
+  - `--enable-mock` - Enable mock OCM clients (default: true)
   - `--ocm-base-url` - OCM API base URL (default: integration environment)
   - `--ocm-token-url` - OCM token endpoint URL (default: Red Hat SSO)
   - `--ocm-client-id-file` - OCM API client ID file (default: "secrets/ocm-service.clientId")
