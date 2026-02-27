@@ -105,7 +105,11 @@ func (km *KindControllerManager) handle(ctx context.Context, id string) {
 	event, err := km.events.Get(ctx, id)
 
 	if err != nil {
-		log.Error(err.Error())
+		if err.Is404() {
+			log.V(5).Infof("Event %s already processed or removed, skipping", id)
+		} else {
+			log.Error(err.Error())
+		}
 		return
 	}
 

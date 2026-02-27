@@ -116,7 +116,11 @@ func (b *EventBroker) Publish(eventID string) {
 	ctx := context.Background()
 	event, svcErr := b.events.Get(ctx, eventID)
 	if svcErr != nil {
-		glog.Warningf("EventBroker: failed to load event %s: %v", eventID, svcErr)
+		if svcErr.Is404() {
+			glog.V(5).Infof("EventBroker: event %s already processed or removed, skipping", eventID)
+		} else {
+			glog.Warningf("EventBroker: failed to load event %s: %v", eventID, svcErr)
+		}
 		return
 	}
 
