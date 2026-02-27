@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Helmet from 'react-helmet';
 import { useHistory } from 'react-router-dom';
 import {
   ActionGroup,
@@ -68,7 +67,6 @@ const {{.Resource.Name}}CreatePage: React.FC = () => {
 
   return (
     <>
-      <Helmet><title>Create {{.Resource.Name}}</title></Helmet>
       <PageSection variant="light">
         <Breadcrumb>
           <BreadcrumbItem

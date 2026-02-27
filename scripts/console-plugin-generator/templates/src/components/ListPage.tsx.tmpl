@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Helmet from 'react-helmet';
 import { Link, useHistory } from 'react-router-dom';
 import {
   Button,
@@ -73,7 +72,6 @@ const {{.Resource.Name}}ListPage: React.FC = () => {
 
   return (
     <>
-      <Helmet><title>{{.Resource.Plural}}</title></Helmet>
       <PageSection variant="light">
         <Title headingLevel="h1">{{.Resource.Plural}}</Title>
       </PageSection>
