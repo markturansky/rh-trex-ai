@@ -206,8 +206,11 @@ All subcommands support these logging flags:
 - Plugin-based gRPC service registration via `RegisterGRPCService()` / `LoadDiscoveredGRPCServices()`
 
 **Infrastructure:**
-- **Authentication** (`pkg/auth/`): OIDC integration with Red Hat SSO
-- **Clients** (`pkg/client/ocm/`): OCM (OpenShift Cluster Manager) integration
+- **Authentication** (`pkg/auth/`): Generic JWT authentication with configurable OIDC providers
+  - `middleware.go`: JWT validation and JWK key management
+  - `context.go`: Token extraction and claims processing
+  - `auth_middleware.go`: Account authentication middleware
+- **Clients** (`pkg/client/`): External service integration (OCM for legacy compatibility)
 - **Configuration** (`pkg/config/`): Environment-specific settings
 - **Logging** (`cmd/trex/server/logging/`): Structured logging with request middleware
 - **Metrics** (`pkg/handlers/prometheus_metrics.go`): Prometheus integration
@@ -305,7 +308,7 @@ Each generated service includes idempotent event handlers:
 ```go
 // OnUpsert handles CREATE and UPDATE events
 func (s *sqlKindService) OnUpsert(ctx context.Context, id string) error {
-    logger := logger.NewOCMLogger(ctx)
+    logger := logger.NewLogger(ctx)
     
     kind, err := s.kindDao.Get(ctx, id)
     if err != nil {
@@ -318,7 +321,7 @@ func (s *sqlKindService) OnUpsert(ctx context.Context, id string) error {
 
 // OnDelete handles DELETE events
 func (s *sqlKindService) OnDelete(ctx context.Context, id string) error {
-    logger := logger.NewOCMLogger(ctx)
+    logger := logger.NewLogger(ctx)
     logger.Infof("This kind has been deleted: %s", id)
     return nil
 }
@@ -682,14 +685,29 @@ make generate
 
 ## Authentication
 
-Local development uses Red Hat SSO authentication. Use the `ocm` CLI tool:
-```bash
-# Login to local service
-ocm login --token=${OCM_ACCESS_TOKEN} --url=http://localhost:8000
+TRex uses JWT-based authentication with configurable identity providers. By default, it's configured for Red Hat SSO but can be adapted to any OIDC-compliant provider.
 
-# Test API endpoints
+### JWT Authentication Configuration
+
+```bash
+# Configure identity provider
+--jwk-cert-url https://your-provider.com/auth/realms/your-realm/protocol/openid-connect/certs
+--enable-jwt=true
+
+# Disable authentication for local development
+--enable-jwt=false
+```
+
+### Local Development
+
+Use standard OIDC tools or the `ocm` CLI for Red Hat SSO:
+```bash
+# With Red Hat SSO via ocm CLI
+ocm login --token=${OCM_ACCESS_TOKEN} --url=http://localhost:8000
 ocm get /api/rh-trex/v1/dinosaurs
-ocm post /api/rh-trex/v1/dinosaurs '{"species": "foo"}'
+
+# With curl and JWT token
+curl -H "Authorization: Bearer ${JWT_TOKEN}" http://localhost:8000/api/rh-trex/v1/dinosaurs
 ```
 
 ## Database

@@ -570,7 +570,7 @@ func LoggingUnaryInterceptor() grpc.UnaryServerInterceptor {
         start := time.Now()
         operationID := logger.NewOperationID()
         ctx = logger.SetOperationID(ctx, operationID)
-        log := logger.NewOCMLogger(ctx)
+        log := logger.NewLogger(ctx)
 
         resp, err := handler(ctx, req)
 
