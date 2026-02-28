@@ -14,6 +14,23 @@ import (
 	"github.com/openshift-online/rh-trex-ai/pkg/server/grpcutil"
 )
 
+// Global interceptor registries for pre-auth interceptors
+// Mirrors the pattern from apiserver.go for HTTP middleware
+var preAuthUnaryInterceptors []grpc.UnaryServerInterceptor
+var preAuthStreamInterceptors []grpc.StreamServerInterceptor
+
+// RegisterPreAuthGRPCUnaryInterceptor registers a unary interceptor that runs before JWT auth
+// This allows downstream components (like API server) to add custom authentication
+func RegisterPreAuthGRPCUnaryInterceptor(interceptor grpc.UnaryServerInterceptor) {
+	preAuthUnaryInterceptors = append(preAuthUnaryInterceptors, interceptor)
+}
+
+// RegisterPreAuthGRPCStreamInterceptor registers a stream interceptor that runs before JWT auth
+// This allows downstream components (like API server) to add custom authentication
+func RegisterPreAuthGRPCStreamInterceptor(interceptor grpc.StreamServerInterceptor) {
+	preAuthStreamInterceptors = append(preAuthStreamInterceptors, interceptor)
+}
+
 type grpcAPIServer struct {
 	grpcServer *grpc.Server
 	env        *environments.Env
@@ -27,20 +44,29 @@ func NewDefaultGRPCServer(env *environments.Env) Server {
 		keyProvider = grpcutil.NewJWKKeyProvider(env.Config.Server.JwkCertURL, env.Config.Server.JwkCertFile)
 	}
 
+	// Build interceptor chains with pre-auth interceptors running BEFORE JWT auth
+	unaryChain := []grpc.UnaryServerInterceptor{
+		RecoveryUnaryInterceptor(),
+		LoggingUnaryInterceptor(),
+		MetricsUnaryInterceptor(),
+		TransactionUnaryInterceptor(env.Database.SessionFactory),
+	}
+	// Add pre-auth interceptors before JWT auth
+	unaryChain = append(unaryChain, preAuthUnaryInterceptors...)
+	unaryChain = append(unaryChain, AuthUnaryInterceptor(env, keyProvider))
+
+	streamChain := []grpc.StreamServerInterceptor{
+		RecoveryStreamInterceptor(),
+		LoggingStreamInterceptor(),
+		MetricsStreamInterceptor(),
+	}
+	// Add pre-auth interceptors before JWT auth
+	streamChain = append(streamChain, preAuthStreamInterceptors...)
+	streamChain = append(streamChain, AuthStreamInterceptor(env, keyProvider))
+
 	opts := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(
-			RecoveryUnaryInterceptor(),
-			LoggingUnaryInterceptor(),
-			MetricsUnaryInterceptor(),
-			TransactionUnaryInterceptor(env.Database.SessionFactory),
-			AuthUnaryInterceptor(env, keyProvider),
-		),
-		grpc.ChainStreamInterceptor(
-			RecoveryStreamInterceptor(),
-			LoggingStreamInterceptor(),
-			MetricsStreamInterceptor(),
-			AuthStreamInterceptor(env, keyProvider),
-		),
+		grpc.ChainUnaryInterceptor(unaryChain...),
+		grpc.ChainStreamInterceptor(streamChain...),
 	}
 
 	if env.Config.GRPC.EnableTLS {
