@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/openshift-online/rh-trex-ai/pkg/controllers"
 	"github.com/openshift-online/rh-trex-ai/pkg/db"
@@ -13,6 +15,7 @@ import (
 
 type ControllersServer struct {
 	KindControllerManager *controllers.KindControllerManager
+	SyncController        *controllers.SyncController
 	Broker                *EventBroker
 	SessionFactory        db.SessionFactory
 	cancel                context.CancelFunc
@@ -29,11 +32,24 @@ func (s *ControllersServer) Start() {
 			s.Broker.Publish(id)
 		}
 	})
+	
+	// Start sync-the-world controller for missed event recovery
+	if s.SyncController != nil {
+		s.SyncController.Start()
+		log.Infof("Sync controller started for missed event recovery")
+	}
 }
 
 func (s *ControllersServer) Stop() {
 	log := logger.NewLogger(context.Background())
 	log.Infof("Stopping controllers server")
+	
+	if s.SyncController != nil {
+		if err := s.SyncController.Stop(); err != nil {
+			log.Error(fmt.Sprintf("Error stopping sync controller: %v", err))
+		}
+	}
+	
 	if s.Broker != nil {
 		s.Broker.Close()
 	}
@@ -55,13 +71,30 @@ func NewDefaultControllersServer(env *environments.Env) *ControllersServer {
 	broker := NewEventBroker(256, eventService)
 	env.Services.SetService("EventBroker", broker)
 
-	s := &ControllersServer{
-		KindControllerManager: controllers.NewKindControllerManager(
-			db.NewAdvisoryLockFactory(env.Database.SessionFactory),
+	kindControllerManager := controllers.NewKindControllerManager(
+		db.NewAdvisoryLockFactory(env.Database.SessionFactory),
+		eventService,
+	)
+
+	// Create sync controller for missed event recovery
+	var syncController *controllers.SyncController
+	if eventService != nil {
+		syncController = controllers.NewSyncController(
+			kindControllerManager,
 			eventService,
-		),
-		Broker:         broker,
-		SessionFactory: env.Database.SessionFactory,
+			controllers.SyncControllerConfig{
+				Interval:         5 * time.Minute, // Sync every 5 minutes
+				MaxAge:           1 * time.Hour,   // Process events up to 1 hour old
+				MaxEventsPerSync: 1000,            // Limit events per sync cycle
+			},
+		)
+	}
+
+	s := &ControllersServer{
+		KindControllerManager: kindControllerManager,
+		SyncController:        syncController,
+		Broker:                broker,
+		SessionFactory:        env.Database.SessionFactory,
 	}
 
 	LoadDiscoveredControllers(s.KindControllerManager, &env.Services)

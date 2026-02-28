@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -58,4 +59,27 @@ func (d *eventDaoMock) FindByIDs(ctx context.Context, ids []string) (api.EventLi
 
 func (d *eventDaoMock) All(ctx context.Context) (api.EventList, error) {
 	return d.events, nil
+}
+
+func (d *eventDaoMock) FindUnreconciled(ctx context.Context, olderThan time.Duration) (api.EventList, error) {
+	cutoff := time.Now().Add(-olderThan)
+	result := api.EventList{}
+	
+	for _, event := range d.events {
+		if event.ReconciledDate == nil && event.CreatedAt.Before(cutoff) {
+			result = append(result, event)
+		}
+	}
+	return result, nil
+}
+
+func (d *eventDaoMock) FindBySourceAndType(ctx context.Context, source string, eventType api.EventType) (api.EventList, error) {
+	result := api.EventList{}
+	
+	for _, event := range d.events {
+		if event.Source == source && event.EventType == eventType {
+			result = append(result, event)
+		}
+	}
+	return result, nil
 }

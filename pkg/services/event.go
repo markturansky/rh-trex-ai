@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"time"
 
 	"github.com/openshift-online/rh-trex-ai/pkg/api"
 	"github.com/openshift-online/rh-trex-ai/pkg/dao"
@@ -18,6 +19,10 @@ type EventService interface {
 	All(ctx context.Context) (api.EventList, *errors.ServiceError)
 
 	FindByIDs(ctx context.Context, ids []string) (api.EventList, *errors.ServiceError)
+	
+	// Sync-the-world methods for missed event recovery
+	FindUnreconciled(ctx context.Context, olderThan time.Duration) (api.EventList, *errors.ServiceError)
+	FindBySourceAndType(ctx context.Context, source string, eventType api.EventType) (api.EventList, *errors.ServiceError)
 }
 
 func NewEventService(eventDao dao.EventDao) EventService {
@@ -75,6 +80,22 @@ func (s *sqlEventService) All(ctx context.Context) (api.EventList, *errors.Servi
 	events, err := s.eventDao.All(ctx)
 	if err != nil {
 		return nil, errors.GeneralError("Unable to get all events: %s", err)
+	}
+	return events, nil
+}
+
+func (s *sqlEventService) FindUnreconciled(ctx context.Context, olderThan time.Duration) (api.EventList, *errors.ServiceError) {
+	events, err := s.eventDao.FindUnreconciled(ctx, olderThan)
+	if err != nil {
+		return nil, errors.GeneralError("Unable to find unreconciled events: %s", err)
+	}
+	return events, nil
+}
+
+func (s *sqlEventService) FindBySourceAndType(ctx context.Context, source string, eventType api.EventType) (api.EventList, *errors.ServiceError) {
+	events, err := s.eventDao.FindBySourceAndType(ctx, source, eventType)
+	if err != nil {
+		return nil, errors.GeneralError("Unable to find events by source and type: %s", err)
 	}
 	return events, nil
 }
