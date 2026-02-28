@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/golang/glog"
@@ -18,17 +20,24 @@ import (
 
 // JWTHandler provides JWT authentication without OCM dependencies
 type JWTHandler struct {
-	keysURL    string
-	keysFile   string
-	publicKeys map[string]*rsa.PublicKey
-	aclFile    string
+	keysURL     string
+	keysFile    string
+	publicKeys  map[string]*rsa.PublicKey
+	keysMutex   sync.RWMutex
+	aclFile     string
 	publicPaths []string
+	httpClient  *http.Client
+	refreshStop chan struct{}
 }
 
 // NewJWTHandler creates a new JWT handler instance
 func NewJWTHandler() *JWTHandler {
 	return &JWTHandler{
 		publicKeys: make(map[string]*rsa.PublicKey),
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+		refreshStop: make(chan struct{}),
 	}
 }
 
@@ -63,6 +72,11 @@ func (j *JWTHandler) Build() (func(http.Handler) http.Handler, error) {
 		return nil, fmt.Errorf("failed to load JWT keys: %v", err)
 	}
 
+	// Start automatic key refresh if using URL
+	if j.keysURL != "" {
+		go j.refreshKeysLoop()
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check if this is a public path
@@ -74,14 +88,16 @@ func (j *JWTHandler) Build() (func(http.Handler) http.Handler, error) {
 			// Extract JWT token from Authorization header
 			token, err := j.extractToken(r)
 			if err != nil {
-				http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+				glog.Warningf("JWT extraction failed: %v", err)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
 
 			// Validate and parse the JWT token
 			parsedToken, err := j.validateToken(token)
 			if err != nil {
-				http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+				glog.Warningf("JWT validation failed: %v", err)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
 
@@ -126,8 +142,11 @@ func (j *JWTHandler) validateToken(tokenString string) (*jwt.Token, error) {
 			return nil, fmt.Errorf("missing kid in token header")
 		}
 
-		// Find the corresponding public key
+		// Find the corresponding public key (thread-safe read)
+		j.keysMutex.RLock()
 		publicKey, exists := j.publicKeys[kid]
+		j.keysMutex.RUnlock()
+		
 		if !exists {
 			return nil, fmt.Errorf("unknown key ID: %s", kid)
 		}
@@ -149,8 +168,8 @@ func (j *JWTHandler) validateToken(tokenString string) (*jwt.Token, error) {
 // isPublicPath checks if the given path is public (doesn't require auth)
 func (j *JWTHandler) isPublicPath(path string) bool {
 	for _, pattern := range j.publicPaths {
-		// Simple pattern matching - could be enhanced with regex
-		if strings.HasPrefix(path, pattern) {
+		// Exact path matching only - prevents auth bypass vulnerability
+		if path == pattern || path == pattern+"/" {
 			return true
 		}
 	}
@@ -182,11 +201,36 @@ type JWK struct {
 	E   string `json:"e"`   // RSA exponent
 }
 
+// refreshKeysLoop periodically refreshes JWK keys from URL
+func (j *JWTHandler) refreshKeysLoop() {
+	ticker := time.NewTicker(1 * time.Hour) // Refresh every hour
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := j.loadKeysFromURL(); err != nil {
+				glog.Warningf("Failed to refresh JWT keys: %v", err)
+			} else {
+				glog.V(1).Info("JWT keys refreshed successfully")
+			}
+		case <-j.refreshStop:
+			glog.V(1).Info("Stopping JWT key refresh loop")
+			return
+		}
+	}
+}
+
+// Stop stops the key refresh loop
+func (j *JWTHandler) Stop() {
+	close(j.refreshStop)
+}
+
 // loadKeysFromURL fetches JWK keys from the specified URL
 func (j *JWTHandler) loadKeysFromURL() error {
-	glog.Infof("Loading JWT keys from URL: %s", j.keysURL)
+	glog.V(2).Infof("Loading JWT keys from URL: %s", j.keysURL)
 	
-	resp, err := http.Get(j.keysURL)
+	resp, err := j.httpClient.Get(j.keysURL)
 	if err != nil {
 		return fmt.Errorf("failed to fetch JWK set: %v", err)
 	}
@@ -224,6 +268,8 @@ func (j *JWTHandler) loadKeysFromFile() error {
 
 // parseJWKSet converts JWK set to RSA public keys
 func (j *JWTHandler) parseJWKSet(jwkSet *JWKSet) error {
+	newKeys := make(map[string]*rsa.PublicKey)
+	
 	for _, jwk := range jwkSet.Keys {
 		if jwk.Kty != "RSA" {
 			continue // Skip non-RSA keys
@@ -235,14 +281,20 @@ func (j *JWTHandler) parseJWKSet(jwkSet *JWKSet) error {
 			continue
 		}
 
-		j.publicKeys[jwk.Kid] = publicKey
-		glog.Infof("Loaded RSA public key with kid: %s", jwk.Kid)
+		newKeys[jwk.Kid] = publicKey
+		glog.V(2).Infof("Loaded RSA public key with kid: %s", jwk.Kid)
 	}
 
-	if len(j.publicKeys) == 0 {
+	if len(newKeys) == 0 {
 		return fmt.Errorf("no valid RSA keys found in JWK set")
 	}
 
+	// Atomically replace the keys map
+	j.keysMutex.Lock()
+	j.publicKeys = newKeys
+	j.keysMutex.Unlock()
+
+	glog.Infof("Updated JWT keys: %d RSA keys loaded", len(newKeys))
 	return nil
 }
 

@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/auth0/go-jwt-middleware"
-	_ "github.com/golang-jwt/jwt/v4"
 	"github.com/golang/glog"
 	gorillahandlers "github.com/gorilla/handlers"
 
