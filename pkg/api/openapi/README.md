@@ -86,6 +86,10 @@ Class | Method | HTTP request | Description
 *DefaultAPI* | [**ApiRhTrexAiV1FossilsIdGet**](docs/DefaultAPI.md#apirhtrexaiv1fossilsidget) | **Get** /api/rh-trex-ai/v1/fossils/{id} | Get an fossil by id
 *DefaultAPI* | [**ApiRhTrexAiV1FossilsIdPatch**](docs/DefaultAPI.md#apirhtrexaiv1fossilsidpatch) | **Patch** /api/rh-trex-ai/v1/fossils/{id} | Update an fossil
 *DefaultAPI* | [**ApiRhTrexAiV1FossilsPost**](docs/DefaultAPI.md#apirhtrexaiv1fossilspost) | **Post** /api/rh-trex-ai/v1/fossils | Create a new fossil
+*DefaultAPI* | [**ApiRhTrexAiV1ScientistsGet**](docs/DefaultAPI.md#apirhtrexaiv1scientistsget) | **Get** /api/rh-trex-ai/v1/scientists | Returns a list of scientists
+*DefaultAPI* | [**ApiRhTrexAiV1ScientistsIdGet**](docs/DefaultAPI.md#apirhtrexaiv1scientistsidget) | **Get** /api/rh-trex-ai/v1/scientists/{id} | Get an scientist by id
+*DefaultAPI* | [**ApiRhTrexAiV1ScientistsIdPatch**](docs/DefaultAPI.md#apirhtrexaiv1scientistsidpatch) | **Patch** /api/rh-trex-ai/v1/scientists/{id} | Update an scientist
+*DefaultAPI* | [**ApiRhTrexAiV1ScientistsPost**](docs/DefaultAPI.md#apirhtrexaiv1scientistspost) | **Post** /api/rh-trex-ai/v1/scientists | Create a new scientist
 
 
 ## Documentation For Models
@@ -99,6 +103,9 @@ Class | Method | HTTP request | Description
  - [FossilPatchRequest](docs/FossilPatchRequest.md)
  - [List](docs/List.md)
  - [ObjectReference](docs/ObjectReference.md)
+ - [Scientist](docs/Scientist.md)
+ - [ScientistList](docs/ScientistList.md)
+ - [ScientistPatchRequest](docs/ScientistPatchRequest.md)
 
 
 ## Documentation For Authorization

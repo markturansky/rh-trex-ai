@@ -2,6 +2,7 @@
 // sources:
 // ../../openapi/openapi.dinosaurs.yaml
 // ../../openapi/openapi.fossils.yaml
+// ../../openapi/openapi.scientists.yaml
 // ../../openapi/openapi.yaml
 package openapi
 
@@ -191,9 +192,10 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"openapi.dinosaurs.yaml": openapiDinosaursYaml,
-	"openapi.fossils.yaml":   openapiFossilsYaml,
-	"openapi.yaml":           openapiYaml,
+	"openapi.dinosaurs.yaml":  openapiDinosaursYaml,
+	"openapi.fossils.yaml":    openapiFossilsYaml,
+	"openapi.scientists.yaml": openapiScientistsYaml,
+	"openapi.yaml":            openapiYaml,
 }
 
 // AssetDir returns the file names below a certain
@@ -237,9 +239,10 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"openapi.dinosaurs.yaml": &bintree{openapiDinosaursYaml, map[string]*bintree{}},
-	"openapi.fossils.yaml":   &bintree{openapiFossilsYaml, map[string]*bintree{}},
-	"openapi.yaml":           &bintree{openapiYaml, map[string]*bintree{}},
+	"openapi.dinosaurs.yaml":  &bintree{openapiDinosaursYaml, map[string]*bintree{}},
+	"openapi.fossils.yaml":    &bintree{openapiFossilsYaml, map[string]*bintree{}},
+	"openapi.scientists.yaml": &bintree{openapiScientistsYaml, map[string]*bintree{}},
+	"openapi.yaml":            &bintree{openapiYaml, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
