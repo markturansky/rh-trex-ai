@@ -12,11 +12,6 @@ import (
 
 const dinosaursLockType db.LockType = "dinosaurs"
 
-var (
-	DisableAdvisoryLock     = false
-	UseBlockingAdvisoryLock = true
-)
-
 type DinosaurService interface {
 	Get(ctx context.Context, id string) (*Dinosaur, *errors.ServiceError)
 	Create(ctx context.Context, dinosaur *Dinosaur) (*Dinosaur, *errors.ServiceError)
@@ -92,26 +87,13 @@ func (s *sqlDinosaurService) Create(ctx context.Context, dinosaur *Dinosaur) (*D
 }
 
 func (s *sqlDinosaurService) Replace(ctx context.Context, dinosaur *Dinosaur) (*Dinosaur, *errors.ServiceError) {
-	if !DisableAdvisoryLock {
-		if UseBlockingAdvisoryLock {
-			lockOwnerID, err := s.lockFactory.NewAdvisoryLock(ctx, dinosaur.ID, dinosaursLockType)
-			if err != nil {
-				return nil, errors.DatabaseAdvisoryLock(err)
-			}
-			defer s.lockFactory.Unlock(ctx, lockOwnerID)
-		} else {
-			lockOwnerID, locked, err := s.lockFactory.NewNonBlockingLock(ctx, dinosaur.ID, dinosaursLockType)
-			if err != nil {
-				return nil, errors.DatabaseAdvisoryLock(err)
-			}
-			if !locked {
-				return nil, services.HandleCreateError("Dinosaur", errors.New(errors.ErrorConflict, "row locked"))
-			}
-			defer s.lockFactory.Unlock(ctx, lockOwnerID)
-		}
+	lockOwnerID, err := s.lockFactory.NewAdvisoryLock(ctx, dinosaur.ID, dinosaursLockType)
+	if err != nil {
+		return nil, errors.DatabaseAdvisoryLock(err)
 	}
+	defer s.lockFactory.Unlock(ctx, lockOwnerID)
 
-	dinosaur, err := s.dinosaurDao.Replace(ctx, dinosaur)
+	dinosaur, err = s.dinosaurDao.Replace(ctx, dinosaur)
 	if err != nil {
 		return nil, services.HandleUpdateError("Dinosaur", err)
 	}

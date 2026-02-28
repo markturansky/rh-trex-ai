@@ -11,6 +11,7 @@ import (
 	_ "github.com/openshift-online/rh-trex-ai/plugins/events"
 	_ "github.com/openshift-online/rh-trex-ai/plugins/fossils"
 	_ "github.com/openshift-online/rh-trex-ai/plugins/generic"
+	_ "github.com/openshift-online/rh-trex-ai/plugins/scientists"
 )
 
 // nolint

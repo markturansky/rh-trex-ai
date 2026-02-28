@@ -139,6 +139,7 @@ func main() {
 		"openapi-kind",
 		"grpc-handler",
 		"grpc-presenter",
+		"grpc-test",
 		"proto",
 		"plugin",
 	}
@@ -191,6 +192,7 @@ func main() {
 			"generate-openapi-kind":   fmt.Sprintf("openapi/openapi.%s.yaml", k.KindLowerPlural),
 			"generate-grpc-handler":   fmt.Sprintf("plugins/%s/grpc_handler.go", k.KindLowerPlural),
 			"generate-grpc-presenter": fmt.Sprintf("plugins/%s/grpc_presenter.go", k.KindLowerPlural),
+			"generate-grpc-test":      fmt.Sprintf("plugins/%s/grpc_integration_test.go", k.KindLowerPlural),
 			"generate-proto":          fmt.Sprintf("proto/rh_trex/v1/%s.proto", k.KindSnakeCasePlural),
 			"generate-test-factories": fmt.Sprintf("plugins/%s/factory_test.go", k.KindLowerPlural),
 			"generate-test":           fmt.Sprintf("plugins/%s/integration_test.go", k.KindLowerPlural),

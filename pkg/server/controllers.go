@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"sync"
 
 	"github.com/openshift-online/rh-trex-ai/pkg/controllers"
 	"github.com/openshift-online/rh-trex-ai/pkg/db"
@@ -14,6 +15,9 @@ type ControllersServer struct {
 	KindControllerManager *controllers.KindControllerManager
 	Broker                *EventBroker
 	SessionFactory        db.SessionFactory
+	cancel                context.CancelFunc
+	done                  chan struct{}
+	startOnce             sync.Once
 }
 
 func (s ControllersServer) Start() {
@@ -25,6 +29,21 @@ func (s ControllersServer) Start() {
 			s.Broker.Publish(id)
 		}
 	})
+}
+
+func (s *ControllersServer) Stop() {
+	log := logger.NewLogger(context.Background())
+	log.Infof("Stopping controllers server")
+	if s.Broker != nil {
+		s.Broker.Close()
+	}
+	if s.cancel != nil {
+		s.cancel()
+	}
+	if s.done != nil {
+		<-s.done
+	}
+	log.Infof("Controllers server stopped")
 }
 
 func NewDefaultControllersServer(env *environments.Env) *ControllersServer {
@@ -56,7 +75,6 @@ func NewDefaultHealthCheckServer(env *environments.Env) *HealthCheckServer {
 		EnableHTTPS:   env.Config.HealthCheck.EnableHTTPS,
 		HTTPSCertFile: env.Config.Server.HTTPSCertFile,
 		HTTPSKeyFile:  env.Config.Server.HTTPSKeyFile,
-		SentryTimeout: env.Config.Sentry.Timeout,
 	})
 }
 
@@ -66,7 +84,6 @@ func NewDefaultMetricsServer(env *environments.Env) Server {
 		EnableHTTPS:   env.Config.Metrics.EnableHTTPS,
 		HTTPSCertFile: env.Config.Server.HTTPSCertFile,
 		HTTPSKeyFile:  env.Config.Server.HTTPSKeyFile,
-		SentryTimeout: env.Config.Sentry.Timeout,
 	})
 }
 

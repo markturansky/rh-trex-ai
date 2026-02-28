@@ -12,11 +12,6 @@ import (
 
 const {{.KindLowerPlural}}LockType db.LockType = "{{.KindSnakeCasePlural}}"
 
-var (
-	DisableAdvisoryLock     = false
-	UseBlockingAdvisoryLock = true
-)
-
 type {{.Kind}}Service interface {
 	Get(ctx context.Context, id string) (*{{.Kind}}, *errors.ServiceError)
 	Create(ctx context.Context, {{.KindLowerSingular}} *{{.Kind}}) (*{{.Kind}}, *errors.ServiceError)
@@ -92,26 +87,13 @@ func (s *sql{{.Kind}}Service) Create(ctx context.Context, {{.KindLowerSingular}}
 }
 
 func (s *sql{{.Kind}}Service) Replace(ctx context.Context, {{.KindLowerSingular}} *{{.Kind}}) (*{{.Kind}}, *errors.ServiceError) {
-	if !DisableAdvisoryLock {
-		if UseBlockingAdvisoryLock {
-			lockOwnerID, err := s.lockFactory.NewAdvisoryLock(ctx, {{.KindLowerSingular}}.ID, {{.KindLowerPlural}}LockType)
-			if err != nil {
-				return nil, errors.DatabaseAdvisoryLock(err)
-			}
-			defer s.lockFactory.Unlock(ctx, lockOwnerID)
-		} else {
-			lockOwnerID, locked, err := s.lockFactory.NewNonBlockingLock(ctx, {{.KindLowerSingular}}.ID, {{.KindLowerPlural}}LockType)
-			if err != nil {
-				return nil, errors.DatabaseAdvisoryLock(err)
-			}
-			if !locked {
-				return nil, services.HandleCreateError("{{.Kind}}", errors.New(errors.ErrorConflict, "row locked"))
-			}
-			defer s.lockFactory.Unlock(ctx, lockOwnerID)
-		}
+	lockOwnerID, err := s.lockFactory.NewAdvisoryLock(ctx, {{.KindLowerSingular}}.ID, {{.KindLowerPlural}}LockType)
+	if err != nil {
+		return nil, errors.DatabaseAdvisoryLock(err)
 	}
+	defer s.lockFactory.Unlock(ctx, lockOwnerID)
 
-	{{.KindLowerSingular}}, err := s.{{.KindLowerSingular}}Dao.Replace(ctx, {{.KindLowerSingular}})
+	{{.KindLowerSingular}}, err = s.{{.KindLowerSingular}}Dao.Replace(ctx, {{.KindLowerSingular}})
 	if err != nil {
 		return nil, services.HandleUpdateError("{{.Kind}}", err)
 	}
