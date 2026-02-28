@@ -30,7 +30,7 @@ export class SDKClient {
 {{end}}  }
 
   static fromEnv(): SDKClient {
-    const baseUrl = process.env.API_URL || 'http://localhost:8000';
+    const baseUrl = process.env.API_URL || 'https://localhost:8000';
     const token = process.env.API_TOKEN;
 
     if (!token) {

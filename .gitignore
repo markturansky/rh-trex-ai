@@ -32,6 +32,14 @@
 # Ignore built binaries
 /trex
 
+# Ignore compiled generator binaries
+scripts/*/cli-generator
+scripts/*/sdk-generator
+scripts/*/console-plugin-generator
+
+# Ignore generated directories
+generated/
+
 # Ignore generated templates
 /templates/*-template.json
 

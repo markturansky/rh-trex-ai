@@ -52,7 +52,7 @@ class APIClient:
 
     @classmethod
     def from_env(cls, **kwargs: Any) -> APIClient:
-        base_url = os.environ.get("API_URL", "http://localhost:8000")
+        base_url = os.environ.get("API_URL", "https://localhost:8000")
         token = os.environ.get("API_TOKEN")
 
         if not token:

@@ -5,24 +5,42 @@ export function useApiToken(): string | null {
   const [token, setToken] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    consoleFetch('/api/openshift/api/v1/users/~')
-      .then((resp) => {
-        const authHeader =
-          (resp as any)?.headers?.get?.('Authorization') || '';
-        if (authHeader.startsWith('Bearer ')) {
-          setToken(authHeader.slice(7));
-        }
-      })
-      .catch(() => {});
-
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    if (meta) {
-      setToken(meta.getAttribute('content') || null);
-    }
-
+    // Try to get token from window object (most reliable method for console plugins)
     if (typeof (window as any).__OPENSHIFT_CONSOLE_TOKEN__ === 'string') {
       setToken((window as any).__OPENSHIFT_CONSOLE_TOKEN__);
+      return;
     }
+
+    // Try to extract from console's session storage or local storage
+    try {
+      const storageToken = localStorage.getItem('bridge/token') || 
+                          sessionStorage.getItem('bridge/token');
+      if (storageToken) {
+        setToken(storageToken);
+        return;
+      }
+    } catch (e) {
+      // Storage access may be blocked
+    }
+
+    // Fallback: try to get token from CSRF meta tag
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) {
+      const metaToken = meta.getAttribute('content');
+      if (metaToken) {
+        setToken(metaToken);
+        return;
+      }
+    }
+
+    // Last resort: attempt to extract from console fetch interceptor
+    // This creates a dummy request to trigger auth header injection
+    consoleFetch('/api/kubernetes/api/v1/namespaces/openshift-console', {
+      method: 'HEAD'
+    }).catch(() => {
+      // Ignore errors, this is just to trigger auth
+    });
+
   }, []);
 
   return token;
