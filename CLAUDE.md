@@ -718,3 +718,86 @@ make test-integration  # Run tests again
 ```
 
 **Note:** Always run `make` commands from the project root directory where the Makefile is located.
+
+## Code Review Standards
+
+TRex uses a comprehensive review system with memory-based guidance files for consistent, automated reviews.
+
+### Review Command
+
+Use the TRex review command to perform standardized code reviews:
+```bash
+# Review current changes against TRex standards
+/trex.review
+```
+
+This command loads all TRex-specific review guidance including:
+- **Framework compliance** - TRex patterns, plugin architecture, service layers
+- **Security standards** - OCM auth, input validation, secrets management  
+- **Database patterns** - GORM usage, migrations, event-driven architecture
+- **Testing requirements** - Unit tests, integration tests, factory patterns
+- **Error handling** - HTTP status codes, structured logging, recovery patterns
+
+### Pre-commit Checklist
+Before submitting code for review:
+
+- [ ] `make verify` passes (formatting, vetting)
+- [ ] `make lint` passes (golangci-lint)
+- [ ] `make test` passes (unit tests)
+- [ ] `make test-integration` passes
+- [ ] Database migrations are reversible
+- [ ] OpenAPI spec updated for API changes
+- [ ] No secrets in logs or code
+- [ ] Event handlers are idempotent
+- [ ] gRPC services follow protobuf patterns
+
+### Security Requirements
+- OCM token validation on all authenticated endpoints
+- Input validation prevents SQL injection and XSS
+- Error messages don't leak internal details
+- Database operations use transactions where needed
+- Secrets never logged (use token length: `len(token)`)
+- Rate limiting implemented on public endpoints
+
+### Performance Standards
+- List endpoints implement pagination with proper limits
+- Database queries avoid N+1 problems using GORM preloading
+- Large operations use advisory locks to prevent race conditions
+- Resource cleanup in defer statements
+- Context timeout handling in long-running operations
+- Memory efficient streaming for large gRPC responses
+
+### Framework Compliance
+- Follow generated code patterns: Handler → Service → DAO → Model
+- Use TRex error types: `errors.BadRequest`, `errors.NotFound`, etc.
+- Plugin-based architecture with auto-registration
+- Service locators for dependency injection
+- Event-driven controllers with PostgreSQL LISTEN/NOTIFY
+- Idempotent event handlers safe for replay
+
+### Testing Standards
+- Unit tests cover all business logic paths
+- Integration tests validate complete API workflows
+- Test factories provide consistent, reusable test data
+- gRPC streaming tests validate message flow
+- Load testing for performance-critical endpoints
+- Database transaction rollback testing
+
+### Memory System Files
+The review system uses these guidance files:
+
+**Context Files** (technology-specific):
+- `.claude/context/backend-development.md` - Go/TRex/REST/gRPC patterns
+- `.claude/context/database-development.md` - PostgreSQL/GORM/migration patterns  
+- `.claude/context/security-standards.md` - OCM auth, Red Hat security requirements
+
+**Pattern Files** (implementation-specific):
+- `.claude/patterns/error-handling.md` - HTTP status codes, logging, recovery
+- `.claude/patterns/auth-middleware.md` - OCM integration, RBAC, JWT validation
+- `.claude/patterns/testing-patterns.md` - Unit/integration/load testing standards
+
+### Review Severity Levels
+- **Blocker**: Security vulnerabilities, data corruption risk, server crashes
+- **Critical**: Framework violations, missing auth, panic() calls, breaking changes  
+- **Major**: Poor error handling, missing tests, performance issues, API design flaws
+- **Minor**: Style, naming, documentation gaps, non-essential optimizations
