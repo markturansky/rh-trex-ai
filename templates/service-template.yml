@@ -119,6 +119,11 @@ parameters:
   description: Enable gRPC server
   value: "true"
 
+- name: ENABLE_GRPC_TLS
+  displayName: Enable gRPC TLS
+  description: Enable TLS for gRPC server
+  value: "true"
+
 - name: API_SERVER_HOSTNAME
   displayName: API Server Hostname
   description: Server's public hostname
@@ -203,6 +208,9 @@ objects:
           - name: tls
             secret:
               secretName: trex-tls
+          - name: grpc-tls
+            secret:
+              secretName: trex-grpc-tls
           - name: service
             secret:
               secretName: trex
@@ -238,6 +246,8 @@ objects:
             volumeMounts:
             - name: tls
               mountPath: /secrets/tls
+            - name: grpc-tls
+              mountPath: /secrets/grpc-tls
             - name: service
               mountPath: /secrets/service
             - name: rds
@@ -281,6 +291,9 @@ objects:
             - --label-metrics-inclusion-duration=${LABEL_METRICS_INCLUSION_DURATION}
             - --enable-grpc=${ENABLE_GRPC}
             - --grpc-server-bindaddress=${GRPC_SERVER_BINDADDRESS}
+            - --grpc-enable-tls=${ENABLE_GRPC_TLS}
+            - --grpc-tls-cert-file=/secrets/grpc-tls/tls.crt
+            - --grpc-tls-key-file=/secrets/grpc-tls/tls.key
             - --alsologtostderr
             - -v=${GLOG_V}
             resources:

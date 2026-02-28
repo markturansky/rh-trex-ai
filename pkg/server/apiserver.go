@@ -12,9 +12,8 @@ import (
 	_ "github.com/golang-jwt/jwt/v4"
 	"github.com/golang/glog"
 	gorillahandlers "github.com/gorilla/handlers"
-	sdk "github.com/openshift-online/ocm-sdk-go"
-	"github.com/openshift-online/ocm-sdk-go/authentication"
 
+	"github.com/openshift-online/rh-trex-ai/pkg/auth"
 	"github.com/openshift-online/rh-trex-ai/pkg/environments"
 	"github.com/openshift-online/rh-trex-ai/pkg/trex"
 )
@@ -44,25 +43,21 @@ func NewDefaultAPIServer(env *environments.Env, specData []byte) Server {
 	}
 
 	if env.Config.Server.EnableJWT {
-		authnLogger, err := sdk.NewGlogLoggerBuilder().
-			InfoV(glog.Level(1)).
-			DebugV(glog.Level(5)).
-			Build()
-		Check(err, "Unable to create authentication logger")
+		glog.Info("Enabling JWT authentication middleware")
 
-		mainHandler, err = authentication.NewHandler().
-			Logger(authnLogger).
-			KeysFile(env.Config.Server.JwkCertFile).
-			KeysURL(env.Config.Server.JwkCertURL).
-			ACLFile(env.Config.Server.ACLFile).
-			Public("^" + strings.TrimSuffix(trex.GetConfig().BasePath, "/v1") + "/?$").
-			Public("^" + trex.GetConfig().BasePath + "/?$").
-			Public("^" + trex.GetConfig().BasePath + "/openapi/?$").
-			Public("^" + trex.GetConfig().BasePath + "/openapi.html/?$").
-			Public("^" + trex.GetConfig().BasePath + "/errors(/.*)?$").
-			Next(mainHandler).
+		jwtHandler, err := auth.NewJWTHandler().
+			WithKeysFile(env.Config.Server.JwkCertFile).
+			WithKeysURL(env.Config.Server.JwkCertURL).
+			WithACLFile(env.Config.Server.ACLFile).
+			WithPublicPath(strings.TrimSuffix(trex.GetConfig().BasePath, "/v1")).
+			WithPublicPath(trex.GetConfig().BasePath).
+			WithPublicPath(trex.GetConfig().BasePath + "/openapi").
+			WithPublicPath(trex.GetConfig().BasePath + "/openapi.html").
+			WithPublicPath(trex.GetConfig().BasePath + "/errors").
 			Build()
-		Check(err, "Unable to create authentication handler")
+		Check(err, "Unable to create JWT authentication handler")
+
+		mainHandler = jwtHandler(mainHandler)
 	}
 
 	corsOrigins := trex.GetCORSOrigins()

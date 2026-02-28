@@ -33,7 +33,7 @@ func NewServerConfig() *ServerConfig {
 		EnableJWT:     true,
 		EnableAuthz:   true,
 		JwkCertFile:   "",
-		JwkCertURL:    "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/certs",
+		JwkCertURL:    "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/certs", // Default to Red Hat SSO, configurable for other OIDC providers
 		ACLFile:       "",
 		HTTPSCertFile: "",
 		HTTPSKeyFile:  "",

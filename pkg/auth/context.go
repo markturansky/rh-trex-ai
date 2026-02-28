@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/openshift-online/ocm-sdk-go/authentication"
 )
 
 // Context key type defined to avoid collisions in other pkgs using context
@@ -48,7 +47,7 @@ func GetUsernameFromContext(ctx context.Context) string {
 // GetAuthPayloadFromContext Get authorization payload api object from context
 func GetAuthPayloadFromContext(ctx context.Context) (*Payload, error) {
 	// Get user token from request context and validate
-	userToken, err := authentication.TokenFromContext(ctx)
+	userToken, err := TokenFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve JWT token from request context: %v", err)
 	}
