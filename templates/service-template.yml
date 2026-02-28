@@ -369,6 +369,7 @@ objects:
         port: grpc
       annotations:
         description: Exposes and load balances the rh-trex gRPC pods
+        service.beta.openshift.io/serving-cert-secret-name: trex-grpc-tls
     spec:
       selector:
         app: trex
