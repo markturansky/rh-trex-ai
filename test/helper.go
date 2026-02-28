@@ -14,10 +14,10 @@ import (
 
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 
+	"github.com/openshift-online/rh-trex-ai/cmd/trex/environments"
 	"github.com/openshift-online/rh-trex-ai/pkg/api"
 	"github.com/openshift-online/rh-trex-ai/pkg/api/openapi"
 	"github.com/openshift-online/rh-trex-ai/pkg/config"
-	"github.com/openshift-online/rh-trex-ai/cmd/trex/environments"
 	pkgserver "github.com/openshift-online/rh-trex-ai/pkg/server"
 	"github.com/openshift-online/rh-trex-ai/pkg/testutil"
 )
@@ -38,19 +38,19 @@ type TimeFunc func() time.Time
 
 type Helper struct {
 	testutil.BaseHelper
-	APIServer          pkgserver.Server
-	GRPCServer         pkgserver.Server
-	ControllersServer  *pkgserver.ControllersServer
-	MetricsServer      pkgserver.Server
-	HealthCheckServer  pkgserver.Server
-	TimeFunc           TimeFunc
-	teardowns          []func() error
+	APIServer         pkgserver.Server
+	GRPCServer        pkgserver.Server
+	ControllersServer *pkgserver.ControllersServer
+	MetricsServer     pkgserver.Server
+	HealthCheckServer pkgserver.Server
+	TimeFunc          TimeFunc
+	teardowns         []func() error
 }
 
 func NewHelper(t *testing.T) *Helper {
 	once.Do(func() {
 		env := environments.Environment()
-		
+
 		// Force integration testing environment for all test helpers
 		env.Name = "integration_testing"
 		err := env.AddFlags(pflag.CommandLine)

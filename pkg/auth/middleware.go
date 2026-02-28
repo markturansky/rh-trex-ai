@@ -146,7 +146,7 @@ func (j *JWTHandler) validateToken(tokenString string) (*jwt.Token, error) {
 		j.keysMutex.RLock()
 		publicKey, exists := j.publicKeys[kid]
 		j.keysMutex.RUnlock()
-		
+
 		if !exists {
 			return nil, fmt.Errorf("unknown key ID: %s", kid)
 		}
@@ -229,7 +229,7 @@ func (j *JWTHandler) Stop() {
 // loadKeysFromURL fetches JWK keys from the specified URL
 func (j *JWTHandler) loadKeysFromURL() error {
 	glog.V(2).Infof("Loading JWT keys from URL: %s", j.keysURL)
-	
+
 	resp, err := j.httpClient.Get(j.keysURL)
 	if err != nil {
 		return fmt.Errorf("failed to fetch JWK set: %v", err)
@@ -252,7 +252,7 @@ func (j *JWTHandler) loadKeysFromURL() error {
 // loadKeysFromFile loads JWK keys from a local file
 func (j *JWTHandler) loadKeysFromFile() error {
 	glog.Infof("Loading JWT keys from file: %s", j.keysFile)
-	
+
 	data, err := os.ReadFile(j.keysFile)
 	if err != nil {
 		return fmt.Errorf("failed to read JWK file: %v", err)
@@ -269,7 +269,7 @@ func (j *JWTHandler) loadKeysFromFile() error {
 // parseJWKSet converts JWK set to RSA public keys
 func (j *JWTHandler) parseJWKSet(jwkSet *JWKSet) error {
 	newKeys := make(map[string]*rsa.PublicKey)
-	
+
 	for _, jwk := range jwkSet.Keys {
 		if jwk.Kty != "RSA" {
 			continue // Skip non-RSA keys

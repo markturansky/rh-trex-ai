@@ -30,7 +30,7 @@ func TestJWTHandler_isPublicPath(t *testing.T) {
 		},
 		{
 			name:     "protected API endpoint should not match",
-			path:     "/api/rh-trex/v1/dinosaurs", 
+			path:     "/api/rh-trex/v1/dinosaurs",
 			expected: false, // This was the vulnerability - should NOT be public
 		},
 		{
@@ -125,7 +125,7 @@ func TestJWTHandler_extractToken(t *testing.T) {
 func TestJWTHandler_SecurityHeaders(t *testing.T) {
 	// Create a test JWT handler that will fail validation
 	handler := NewJWTHandler()
-	
+
 	// Build the middleware (this will fail key loading, but we can still test error responses)
 	_, err := handler.Build()
 	if err == nil {
@@ -135,7 +135,7 @@ func TestJWTHandler_SecurityHeaders(t *testing.T) {
 	// Test that error responses don't leak internal details
 	req := httptest.NewRequest("GET", "/protected", nil)
 	req.Header.Set("Authorization", "Bearer invalid.jwt.token")
-	
+
 	// Verify the handler properly rejects without keys loaded
 	if req == nil {
 		t.Error("Failed to create test request")
@@ -144,10 +144,10 @@ func TestJWTHandler_SecurityHeaders(t *testing.T) {
 
 func TestJWTHandler_ThreadSafety(t *testing.T) {
 	handler := NewJWTHandler()
-	
+
 	// Test that concurrent access to keys doesn't cause races
 	done := make(chan bool)
-	
+
 	// Simulate concurrent key refresh
 	go func() {
 		for i := 0; i < 100; i++ {
@@ -158,7 +158,7 @@ func TestJWTHandler_ThreadSafety(t *testing.T) {
 		}
 		done <- true
 	}()
-	
+
 	// Simulate concurrent key access
 	go func() {
 		for i := 0; i < 100; i++ {
@@ -169,7 +169,7 @@ func TestJWTHandler_ThreadSafety(t *testing.T) {
 		}
 		done <- true
 	}()
-	
+
 	// Wait for both goroutines
 	<-done
 	<-done
@@ -177,13 +177,13 @@ func TestJWTHandler_ThreadSafety(t *testing.T) {
 
 func TestJWTHandler_Stop(t *testing.T) {
 	handler := NewJWTHandler()
-	
+
 	// Start the refresh loop
 	go handler.refreshKeysLoop()
-	
+
 	// Stop it
 	handler.Stop()
-	
+
 	// Verify the stop channel is closed
 	select {
 	case <-handler.refreshStop:

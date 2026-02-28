@@ -25,7 +25,7 @@ func TestGRPCInterceptorIntegration(t *testing.T) {
 	bearerTokenUnaryInterceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// Simulate bearer token validation
 		executed = append(executed, "bearer-unary")
-		
+
 		// In real implementation, would check for AMBIENT_API_TOKEN header
 		// For this test, just pass through
 		return handler(ctx, req)
@@ -34,7 +34,7 @@ func TestGRPCInterceptorIntegration(t *testing.T) {
 	bearerTokenStreamInterceptor := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		// Simulate bearer token validation
 		executed = append(executed, "bearer-stream")
-		
+
 		// In real implementation, would check for AMBIENT_API_TOKEN header
 		// For this test, just pass through
 		return handler(srv, ss)
@@ -63,13 +63,13 @@ func TestGRPCInterceptorIntegration(t *testing.T) {
 	unaryChain := []grpc.UnaryServerInterceptor{
 		// Standard interceptors would be here (recovery, logging, etc.)
 	}
-	unaryChain = append(unaryChain, preAuthUnaryInterceptors...)  // Pre-auth interceptors BEFORE JWT
-	unaryChain = append(unaryChain, jwtAuthInterceptor)  // JWT auth interceptor
+	unaryChain = append(unaryChain, preAuthUnaryInterceptors...) // Pre-auth interceptors BEFORE JWT
+	unaryChain = append(unaryChain, jwtAuthInterceptor)          // JWT auth interceptor
 
 	// Verify chain order by simulating execution
 	ctx := context.Background()
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Service/Method"}
-	
+
 	finalHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		executed = append(executed, "final-handler")
 		return "success", nil
@@ -126,7 +126,7 @@ func TestGRPCInterceptorWithoutRegistration(t *testing.T) {
 		// Standard interceptors would be here
 	}
 	// No pre-auth interceptors registered
-	unaryChain = append(unaryChain, preAuthUnaryInterceptors...)  // Empty slice
+	unaryChain = append(unaryChain, preAuthUnaryInterceptors...) // Empty slice
 	unaryChain = append(unaryChain, jwtAuthInterceptor)
 
 	// Should only have JWT auth interceptor
@@ -137,11 +137,11 @@ func TestGRPCInterceptorWithoutRegistration(t *testing.T) {
 	// Verify it works normally
 	ctx := context.Background()
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Service/Method"}
-	
+
 	result, err := unaryChain[0](ctx, "test", info, func(ctx context.Context, req interface{}) (interface{}, error) {
 		return "no-preauth", nil
 	})
-	
+
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}

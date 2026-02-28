@@ -7,11 +7,11 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
+	"github.com/openshift-online/rh-trex-ai/cmd/trex/environments"
 	"github.com/openshift-online/rh-trex-ai/pkg/api"
 	"github.com/openshift-online/rh-trex-ai/pkg/controllers"
 	"github.com/openshift-online/rh-trex-ai/pkg/dao"
 	"github.com/openshift-online/rh-trex-ai/pkg/db"
-	"github.com/openshift-online/rh-trex-ai/cmd/trex/environments"
 	pkgserver "github.com/openshift-online/rh-trex-ai/pkg/server"
 	"github.com/openshift-online/rh-trex-ai/plugins/dinosaurs"
 	"github.com/openshift-online/rh-trex-ai/plugins/events"

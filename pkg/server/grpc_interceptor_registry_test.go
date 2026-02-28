@@ -17,14 +17,14 @@ func TestRegisterPreAuthGRPCUnaryInterceptor(t *testing.T) {
 
 	// Test registering unary interceptors
 	called := []string{}
-	
+
 	interceptor1 := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		called = append(called, "interceptor1")
 		return handler(ctx, req)
 	}
-	
+
 	interceptor2 := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		called = append(called, "interceptor2") 
+		called = append(called, "interceptor2")
 		return handler(ctx, req)
 	}
 
@@ -46,7 +46,7 @@ func TestRegisterPreAuthGRPCUnaryInterceptor(t *testing.T) {
 	// Simulate interceptor chain execution
 	ctx := context.Background()
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Service/Method"}
-	
+
 	var handler grpc.UnaryHandler = finalHandler
 	// Execute in reverse order (as gRPC would)
 	for i := len(preAuthUnaryInterceptors) - 1; i >= 0; i-- {
@@ -56,7 +56,7 @@ func TestRegisterPreAuthGRPCUnaryInterceptor(t *testing.T) {
 			return interceptor(ctx, req, info, currentHandler)
 		}
 	}
-	
+
 	result, err := handler(ctx, "test-request")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -87,12 +87,12 @@ func TestRegisterPreAuthGRPCStreamInterceptor(t *testing.T) {
 
 	// Test registering stream interceptors
 	called := []string{}
-	
+
 	interceptor1 := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		called = append(called, "stream1")
 		return handler(srv, ss)
 	}
-	
+
 	interceptor2 := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		called = append(called, "stream2")
 		return handler(srv, ss)
@@ -115,7 +115,7 @@ func TestRegisterPreAuthGRPCStreamInterceptor(t *testing.T) {
 
 	// Simulate interceptor chain execution
 	info := &grpc.StreamServerInfo{FullMethod: "/test.Service/StreamMethod"}
-	
+
 	var handler grpc.StreamHandler = finalHandler
 	// Execute in reverse order (as gRPC would)
 	for i := len(preAuthStreamInterceptors) - 1; i >= 0; i-- {
@@ -125,7 +125,7 @@ func TestRegisterPreAuthGRPCStreamInterceptor(t *testing.T) {
 			return interceptor(srv, ss, info, currentHandler)
 		}
 	}
-	
+
 	err := handler("test-service", nil)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -194,7 +194,7 @@ func TestGRPCInterceptorRegistryThreadSafety(t *testing.T) {
 
 	// Test concurrent registration (basic test - not comprehensive thread safety)
 	done := make(chan bool)
-	
+
 	dummyUnary := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		return handler(ctx, req)
 	}
@@ -209,7 +209,7 @@ func TestGRPCInterceptorRegistryThreadSafety(t *testing.T) {
 		}
 		done <- true
 	}()
-	
+
 	go func() {
 		for i := 0; i < 10; i++ {
 			RegisterPreAuthGRPCStreamInterceptor(dummyStream)

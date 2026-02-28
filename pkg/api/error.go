@@ -106,7 +106,7 @@ func getPanicBody() []byte {
 				err.Error(),
 			)
 			glog.Error(err)
-	
+
 			panic(err)
 		}
 	})

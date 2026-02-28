@@ -74,11 +74,11 @@ type Clients struct {
 }
 
 type ConfigDefaults struct {
-	Server   map[string]interface{}
-	Metrics  map[string]interface{}
-	Database map[string]interface{}
+	Server    map[string]interface{}
+	Metrics   map[string]interface{}
+	Database  map[string]interface{}
 	APIClient map[string]interface{}
-	Options  map[string]interface{}
+	Options   map[string]interface{}
 }
 
 type EnvironmentImpl interface {

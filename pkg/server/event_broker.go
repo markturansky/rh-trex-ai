@@ -43,10 +43,10 @@ func init() {
 }
 
 type BrokerEvent struct {
-	EventID    string
-	Source     string
-	SourceID   string
-	EventType  api.EventType
+	EventID   string
+	Source    string
+	SourceID  string
+	EventType api.EventType
 }
 
 type Subscription struct {
