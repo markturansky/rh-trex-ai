@@ -47,7 +47,7 @@ func runServe(getSpecData func() ([]byte, error)) {
 	var servers []pkgserver.Server
 
 	controllersServer := pkgserver.NewDefaultControllersServer(env)
-	controllersServer.Start()
+	go controllersServer.Start()
 
 	apiServer := pkgserver.NewDefaultAPIServer(env, specData)
 	servers = append(servers, apiServer)
